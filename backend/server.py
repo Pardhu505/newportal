@@ -139,6 +139,8 @@ class UserCreate(BaseModel):
     email: str
     password: str
     role: str = "employee"  # Default to employee
+    department: str = ""
+    team: str = ""
 
 class UserResponse(BaseModel):
     id: str
