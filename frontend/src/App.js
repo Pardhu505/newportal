@@ -781,7 +781,7 @@ const Welcome = () => {
         <img 
           src="https://showtimeconsulting.in/images/settings/2fd13f50.png" 
           alt="Showtime Consulting" 
-          className="w-20 h-20 object-contain mx-auto"
+          className="w-20 h-20 object-contain mx-auto img-fluid"
         />
       </motion.div>
       
