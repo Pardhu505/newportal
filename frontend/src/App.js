@@ -878,29 +878,25 @@ const DailyReport = () => {
   useEffect(() => {
     fetchDepartments();
     fetchStatusOptions();
+  }, []);
+
+  // Separate useEffect for auto-population after departments are loaded
+  useEffect(() => {
     // Auto-populate user's department and team if they are an employee
-    if (user && user.department && user.team) {
+    if (user && user.department && user.team && Object.keys(departments).length > 0) {
       setSelectedDepartment(user.department);
       setSelectedTeam(user.team);
       // Auto-select the first manager from the team
       if (departments[user.department] && departments[user.department][user.team]) {
         const managers = departments[user.department][user.team];
-        if (managers.length > 0) {
+        if (managers && managers.length > 0) {
           setSelectedManager(managers[0]);
         }
       }
     }
   }, [user, departments]);
 
-  useEffect(() => {
-    // Update manager when department/team changes for employee
-    if (user && user.department && user.team && selectedDepartment && selectedTeam) {
-      const managers = getManagers();
-      if (managers.length > 0) {
-        setSelectedManager(managers[0]);
-      }
-    }
-  }, [selectedDepartment, selectedTeam, departments]);
+  // Remove the problematic useEffect that was causing the error
 
   const fetchDepartments = async () => {
     try {
