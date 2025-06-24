@@ -441,7 +441,7 @@ const Signup = ({ onSwitchToLogin }) => {
             <img 
               src="https://showtimeconsulting.in/images/settings/2fd13f50.png" 
               alt="Showtime Consulting" 
-              className="w-16 h-16 object-contain mx-auto"
+              className="w-16 h-16 object-contain mx-auto img-fluid"
             />
           </motion.div>
           <h1 className="text-2xl font-bold">Create Account</h1>
