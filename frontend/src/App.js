@@ -1329,67 +1329,107 @@ const TeamReport = () => {
   const exportPDF = () => {
     const doc = new jsPDF();
     
-    // Title
-    doc.setFontSize(20);
-    doc.text('Team Work Report', 14, 25);
+    // Title and Header
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Team Work Report', 14, 20);
     
-    // Date
+    // Company Logo placeholder
     doc.setFontSize(12);
-    doc.text(`Generated on: ${new Date().toLocaleDateString('en-IN')}`, 14, 35);
+    doc.setFont('helvetica', 'normal');
+    doc.text('SHOWTIME CONSULTING', 14, 30);
     
-    // Table headers
-    const headers = [
-      'Date', 'Employee', 'Department', 'Team', 'Manager', 'Task Details', 'Status'
-    ];
+    // Date and time
+    doc.setFontSize(10);
+    doc.text(`Generated on: ${new Date().toLocaleDateString('en-IN')} at ${new Date().toLocaleTimeString('en-IN')}`, 14, 40);
     
-    // Table data
-    const data = [];
+    // Prepare table data - each task gets its own row
+    const tableData = [];
     reports.forEach(report => {
-      report.tasks.forEach(task => {
-        data.push([
+      if (report.tasks && report.tasks.length > 0) {
+        report.tasks.forEach((task, taskIndex) => {
+          tableData.push([
+            report.date,
+            report.employee_name,
+            report.department,
+            report.team,
+            report.reporting_manager,
+            task.details,
+            task.status
+          ]);
+        });
+      } else {
+        // If no tasks, still show the report with empty task
+        tableData.push([
           report.date,
           report.employee_name,
           report.department,
           report.team,
           report.reporting_manager,
-          task.details.substring(0, 50) + (task.details.length > 50 ? '...' : ''),
-          task.status
+          'No tasks reported',
+          'N/A'
         ]);
-      });
+      }
     });
     
-    // Generate table
+    // Create the table
     doc.autoTable({
-      head: [headers],
-      body: data,
-      startY: 45,
+      head: [['Date', 'Employee', 'Department', 'Team', 'Manager', 'Task Details', 'Status']],
+      body: tableData,
+      startY: 50,
       styles: {
         fontSize: 8,
-        cellPadding: 2,
+        cellPadding: 3,
+        overflow: 'linebreak',
+        halign: 'left',
+        valign: 'top'
       },
       headStyles: {
         fillColor: [147, 51, 234], // Purple color
-        textColor: [255, 255, 255]
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 9
       },
       alternateRowStyles: {
-        fillColor: [248, 250, 252]
+        fillColor: [248, 250, 252] // Light gray
       },
-      margin: { top: 45 }
+      columnStyles: {
+        0: { cellWidth: 20 }, // Date
+        1: { cellWidth: 25 }, // Employee
+        2: { cellWidth: 25 }, // Department
+        3: { cellWidth: 20 }, // Team
+        4: { cellWidth: 25 }, // Manager
+        5: { cellWidth: 50 }, // Task Details - wider
+        6: { cellWidth: 20 }  // Status
+      },
+      margin: { top: 50 },
+      theme: 'striped'
     });
     
-    // Footer
+    // Add footer on each page
     const pageCount = doc.internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
-      doc.setFontSize(10);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'italic');
+      
+      // Page number
       doc.text(
-        'For any technical clarification, kindly reach out to Datateam-STC AP',
+        `Page ${i} of ${pageCount}`,
+        doc.internal.pageSize.width - 30,
+        doc.internal.pageSize.height - 15
+      );
+      
+      // Contact footer
+      doc.text(
+        'For any technical clarification, kindly reach out to Data Team : STC-AP | Pardhasaradhi',
         14,
         doc.internal.pageSize.height - 10
       );
     }
     
-    doc.save('team_work_report.pdf');
+    // Save the PDF
+    doc.save(`Team_Work_Report_${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
   const getTeams = () => {
