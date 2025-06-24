@@ -147,6 +147,8 @@ class UserResponse(BaseModel):
     name: str
     email: str
     role: str
+    department: str = ""
+    team: str = ""
 
 class Task(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
