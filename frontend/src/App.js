@@ -327,7 +327,6 @@ const Login = ({ onSwitchToSignup }) => {
           </button>
         </div>
       </div>
-      <Footer />
     </motion.div>
   );
 };
