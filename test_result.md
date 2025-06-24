@@ -137,15 +137,18 @@ backend:
 
   - task: "Work Report CRUD Operations"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Implemented create, read, update work reports with role-based permissions (only managers can edit)"
+      - working: true
+        agent: "testing"
+        comment: "Work Report CRUD Operations are working correctly. Successfully tested creating work reports, fetching work reports with different user roles (employees can only see their own reports), filtering work reports by department, team, manager, and date ranges, and updating work reports (only managers can update). Fixed an issue with MongoDB ObjectId serialization."
 
   - task: "CSV Export Functionality"
     implemented: true
