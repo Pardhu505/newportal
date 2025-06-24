@@ -1,38 +1,257 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 .App {
-    text-align: center;
+  min-height: 100vh;
 }
 
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
+/* Custom scrollbar for better UX */
+::-webkit-scrollbar {
+  width: 8px;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
-    }
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
 }
 
-.App-header {
-    background-color: #0f0f10;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
 }
 
-.App-link {
-    color: #61dafb;
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }
 
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+/* Smooth transitions */
+* {
+  transition: all 0.2s ease;
+}
+
+/* Focus states for better accessibility */
+input:focus,
+select:focus,
+textarea:focus,
+button:focus {
+  outline: none;
+  ring: 2px;
+  ring-color: #8b5cf6;
+}
+
+/* Button hover effects */
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+/* Card hover effects */
+.bg-white:hover {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Status badge styles */
+.status-completed {
+  @apply bg-green-100 text-green-800;
+}
+
+.status-wip {
+  @apply bg-blue-100 text-blue-800;
+}
+
+.status-delayed {
+  @apply bg-red-100 text-red-800;
+}
+
+.status-yet-to-start {
+  @apply bg-gray-100 text-gray-800;
+}
+
+/* Loading animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-spinner {
+  animation: spin 1s linear infinite;
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* Table styles */
+table {
+  border-collapse: collapse;
+}
+
+tbody tr:hover {
+  background-color: rgba(139, 92, 246, 0.05);
+}
+
+/* Form validation styles */
+.invalid {
+  @apply border-red-500 bg-red-50;
+}
+
+.valid {
+  @apply border-green-500 bg-green-50;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .grid-cols-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  
+  .grid-cols-3 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+  
+  .lg\:col-span-8 {
+    grid-column: span 12 / span 12;
+  }
+  
+  .lg\:col-span-3 {
+    grid-column: span 12 / span 12;
+  }
+  
+  .lg\:col-span-1 {
+    grid-column: span 12 / span 12;
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  body {
+    background: white !important;
+  }
+  
+  .shadow-lg {
+    box-shadow: none !important;
+  }
+}
+
+/* Dark mode support (if needed later) */
+@media (prefers-color-scheme: dark) {
+  /* Dark mode styles can be added here */
+}
+
+/* Custom utilities */
+.gradient-bg {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.text-shadow {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Animation for success messages */
+@keyframes slideInFromTop {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.success-message {
+  animation: slideInFromTop 0.3s ease-out;
+}
+
+/* Card stacking effect */
+.card-stack {
+  position: relative;
+}
+
+.card-stack::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: 2px;
+  right: -2px;
+  height: 100%;
+  background: rgba(139, 92, 246, 0.1);
+  border-radius: 1rem;
+  z-index: -1;
+}
+
+/* Professional button variants */
+.btn-primary {
+  @apply bg-purple-600 text-white hover:bg-purple-700;
+}
+
+.btn-secondary {
+  @apply bg-gray-600 text-white hover:bg-gray-700;
+}
+
+.btn-success {
+  @apply bg-green-600 text-white hover:bg-green-700;
+}
+
+.btn-danger {
+  @apply bg-red-600 text-white hover:bg-red-700;
+}
+
+.btn-warning {
+  @apply bg-yellow-600 text-white hover:bg-yellow-700;
+}
+
+/* Enhanced form styling */
+.form-input {
+  @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200;
+}
+
+.form-select {
+  @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white transition-all duration-200;
+}
+
+.form-textarea {
+  @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-vertical transition-all duration-200;
+}
+
+/* Status indicator dots */
+.status-dot {
+  @apply inline-block w-2 h-2 rounded-full mr-2;
+}
+
+.status-dot.completed {
+  @apply bg-green-500;
+}
+
+.status-dot.wip {
+  @apply bg-blue-500;
+}
+
+.status-dot.delayed {
+  @apply bg-red-500;
+}
+
+.status-dot.yet-to-start {
+  @apply bg-gray-500;
 }
