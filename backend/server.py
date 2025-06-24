@@ -116,7 +116,7 @@ PREDEFINED_USERS = [
     {"name": "Robbin Sharma", "email": "rs@showtimeconsulting.in", "password": "Welcome@123", "role": "manager"},
     {"name": "Anant Tiwari", "email": "at@showtimeconsulting.in", "password": "Welcome@123", "role": "manager"},
     {"name": "Alimpan Banerjee", "email": "alimpan@showtimeconsulting.in", "password": "Welcome@123", "role": "manager"},
-    {"name": "Test Employee", "email": "test@showtimeconsulting.in", "password": "Welcome@123", "role": "employee"},
+    {"name": "Test Employee", "email": "test@showtimeconsulting.in", "password": "Welcome@123", "role": "employee", "department": "Data", "team": "Data"},
 ]
 
 # Models
