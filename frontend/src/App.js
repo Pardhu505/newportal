@@ -436,7 +436,7 @@ const Signup = ({ onSwitchToLogin }) => {
         <div className="text-center mb-8">
           <motion.div 
             whileHover={{ scale: 1.05 }}
-            className={`${isDark ? 'bg-white' : 'bg-white'} rounded-2xl p-4 inline-block shadow-lg mb-4`}
+            className="bg-white rounded-2xl p-4 inline-block shadow-lg mb-4 border-2 border-gray-100"
           >
             <img 
               src="https://showtimeconsulting.in/images/settings/2fd13f50.png" 
