@@ -278,12 +278,12 @@ async def signup(user_data: UserCreate):
             detail="Email already registered"
         )
     
-    # Create new user with employee role by default
+    # Create new user with provided role or default to employee
     user = User(
         name=user_data.name,
         email=user_data.email,
         password_hash=hash_password(user_data.password),
-        role="employee"
+        role=user_data.role
     )
     
     await db.users.insert_one(user.dict())
