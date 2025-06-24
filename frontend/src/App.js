@@ -666,6 +666,106 @@ const Navigation = ({ activeSection, setActiveSection }) => {
   );
 };
 
+// Welcome Component
+const Welcome = () => {
+  const { user } = useAuth();
+  const { isDark } = useTheme();
+
+  return (
+    <motion.div 
+      initial="initial"
+      animate="in"
+      exit="out"
+      variants={pageVariants}
+      transition={pageTransition}
+      className={`${
+        isDark ? 'bg-gray-800 text-white' : 'bg-white'
+      } rounded-2xl shadow-lg p-8 text-center`}
+    >
+      <motion.div 
+        whileHover={{ scale: 1.05, rotate: 5 }}
+        className={`${isDark ? 'bg-gray-700' : 'bg-white'} rounded-2xl p-6 inline-block shadow-lg mb-6`}
+      >
+        <img 
+          src="https://showtimeconsulting.in/images/settings/2fd13f50.png" 
+          alt="Showtime Consulting" 
+          className="w-20 h-20 object-contain mx-auto"
+        />
+      </motion.div>
+      
+      <motion.h1 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="text-4xl font-bold mb-2"
+      >
+        <span className="text-purple-600">SHOWTIME</span>
+      </motion.h1>
+      <motion.h2 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className={`text-xl ${isDark ? 'text-gray-400' : 'text-gray-600'} mb-6`}
+      >
+        CONSULTING
+      </motion.h2>
+      
+      <motion.h3 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="text-2xl font-bold mb-4"
+      >
+        Welcome to the
+      </motion.h3>
+      <motion.h4 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+        className="text-2xl font-bold text-purple-600 mb-6"
+      >
+        Daily Work Reporting Portal
+      </motion.h4>
+      
+      <motion.p 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6 }}
+        className={`${isDark ? 'text-gray-400' : 'text-gray-600'} max-w-2xl mx-auto leading-relaxed`}
+      >
+        Streamline your daily work reporting with our professional, intuitive 
+        platform designed for efficient team management and progress tracking.
+      </motion.p>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+        {[
+          { icon: "📝", title: "Daily Reports", desc: "Submit your daily work progress and task updates efficiently", color: "purple" },
+          { icon: "👥", title: "Team Management", desc: "Track team performance and manage reporting workflows", color: "blue" },
+          { icon: "📊", title: "Analytics", desc: "Generate comprehensive reports and export data for analysis", color: "green" }
+        ].map((item, index) => (
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7 + index * 0.1 }}
+            whileHover={{ scale: 1.05, y: -5 }}
+            className={`bg-${item.color}-50 ${
+              isDark ? `bg-${item.color}-900 bg-opacity-30` : ''
+            } rounded-xl p-6 cursor-pointer`}
+          >
+            <div className="text-3xl mb-4">{item.icon}</div>
+            <h5 className="font-semibold mb-2">{item.title}</h5>
+            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+              {item.desc}
+            </p>
+          </motion.div>
+        ))}
+      </div>
+      <Footer />
+    </motion.div>
+  );
+};
+
 // Daily Report Component
 const DailyReport = () => {
   const { user, token } = useAuth();
@@ -1027,295 +1127,12 @@ const DailyReport = () => {
       <Footer />
     </motion.div>
   );
-
-// Daily Report Component
-const DailyReport = () => {
-  const { user, token } = useAuth();
-  const [departments, setDepartments] = useState({});
-  const [selectedDepartment, setSelectedDepartment] = useState('');
-  const [selectedTeam, setSelectedTeam] = useState('');
-  const [selectedManager, setSelectedManager] = useState('');
-  const [employeeName, setEmployeeName] = useState(user?.name || '');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [tasks, setTasks] = useState([{ id: Date.now(), details: '', status: 'WIP' }]);
-  const [statusOptions, setStatusOptions] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-
-  useEffect(() => {
-    fetchDepartments();
-    fetchStatusOptions();
-  }, []);
-
-  const fetchDepartments = async () => {
-    try {
-      const response = await axios.get(`${API}/departments`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setDepartments(response.data.departments);
-    } catch (error) {
-      console.error('Error fetching departments:', error);
-    }
-  };
-
-  const fetchStatusOptions = async () => {
-    try {
-      const response = await axios.get(`${API}/status-options`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setStatusOptions(response.data.status_options);
-    } catch (error) {
-      console.error('Error fetching status options:', error);
-    }
-  };
-
-  const getTeams = () => {
-    return selectedDepartment ? Object.keys(departments[selectedDepartment] || {}) : [];
-  };
-
-  const getManagers = () => {
-    if (selectedDepartment && selectedTeam) {
-      return departments[selectedDepartment][selectedTeam] || [];
-    }
-    return [];
-  };
-
-  const addTask = () => {
-    setTasks([...tasks, { id: Date.now(), details: '', status: 'WIP' }]);
-  };
-
-  const updateTask = (id, field, value) => {
-    setTasks(tasks.map(task => 
-      task.id === id ? { ...task, [field]: value } : task
-    ));
-  };
-
-  const removeTask = (id) => {
-    if (tasks.length > 1) {
-      setTasks(tasks.filter(task => task.id !== id));
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage('');
-
-    try {
-      const reportData = {
-        employee_name: employeeName,
-        department: selectedDepartment,
-        team: selectedTeam,
-        reporting_manager: selectedManager,
-        date: date,
-        tasks: tasks.map(({ id, ...task }) => task)
-      };
-
-      await axios.post(`${API}/work-reports`, reportData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      setMessage('Report submitted successfully!');
-      // Reset form
-      setTasks([{ id: Date.now(), details: '', status: 'WIP' }]);
-    } catch (error) {
-      setMessage('Error submitting report. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="bg-white rounded-2xl shadow-lg p-8">
-      <div className="flex items-center justify-between mb-8">
-        <h2 className="text-2xl font-bold text-gray-900">Daily Work Report</h2>
-        <div className="flex items-center space-x-2">
-          <span className={`px-3 py-1 rounded-full text-sm ${
-            user?.role === 'manager' 
-              ? 'bg-purple-100 text-purple-800' 
-              : 'bg-blue-100 text-blue-800'
-          }`}>
-            {user?.role === 'manager' ? '👔 Manager' : '👤 Employee'}
-          </span>
-        </div>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Department *
-            </label>
-            <select
-              value={selectedDepartment}
-              onChange={(e) => {
-                setSelectedDepartment(e.target.value);
-                setSelectedTeam('');
-                setSelectedManager('');
-              }}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              required
-            >
-              <option value="">Select Department</option>
-              {Object.keys(departments).map(dept => (
-                <option key={dept} value={dept}>{dept}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Team *
-            </label>
-            <select
-              value={selectedTeam}
-              onChange={(e) => {
-                setSelectedTeam(e.target.value);
-                setSelectedManager('');
-              }}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              required
-              disabled={!selectedDepartment}
-            >
-              <option value="">Select Team</option>
-              {getTeams().map(team => (
-                <option key={team} value={team}>{team}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Reporting Manager *
-            </label>
-            <select
-              value={selectedManager}
-              onChange={(e) => setSelectedManager(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              required
-              disabled={!selectedTeam}
-            >
-              <option value="">Select Reporting Manager</option>
-              {getManagers().map(manager => (
-                <option key={manager} value={manager}>{manager}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Employee Name *
-            </label>
-            <input
-              type="text"
-              value={employeeName}
-              onChange={(e) => setEmployeeName(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              placeholder="Enter your full name"
-              required
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Date *
-          </label>
-          <div className="max-w-xs">
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              required
-            />
-          </div>
-        </div>
-
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Tasks & Status</h3>
-          
-          {tasks.map((task, index) => (
-            <div key={task.id} className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
-              <div className="lg:col-span-8">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Task Details {index + 1} *
-                </label>
-                <textarea
-                  value={task.details}
-                  onChange={(e) => updateTask(task.id, 'details', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="Enter detailed task description..."
-                  rows="3"
-                  required
-                />
-              </div>
-              
-              <div className="lg:col-span-3">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Status *
-                </label>
-                <select
-                  value={task.status}
-                  onChange={(e) => updateTask(task.id, 'status', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  required
-                >
-                  {statusOptions.map(status => (
-                    <option key={status} value={status}>{status}</option>
-                  ))}
-                </select>
-              </div>
-              
-              <div className="lg:col-span-1 flex items-end">
-                <button
-                  type="button"
-                  onClick={() => removeTask(task.id)}
-                  className="w-full py-3 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition duration-200"
-                  disabled={tasks.length === 1}
-                >
-                  🗑️
-                </button>
-              </div>
-            </div>
-          ))}
-          
-          <button
-            type="button"
-            onClick={addTask}
-            className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-purple-500 hover:text-purple-600 transition duration-200"
-          >
-            ➕ Add New Task
-          </button>
-        </div>
-
-        {message && (
-          <div className={`text-center p-3 rounded-lg ${
-            message.includes('successfully') 
-              ? 'bg-green-100 text-green-800' 
-              : 'bg-red-100 text-red-800'
-          }`}>
-            {message}
-          </div>
-        )}
-
-        <div className="flex justify-center">
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-8 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition duration-200 disabled:opacity-50"
-          >
-            {loading ? 'Submitting...' : '📋 Submit Report'}
-          </button>
-        </div>
-      </form>
-    </div>
-  );
 };
 
 // Team Report Component
 const TeamReport = () => {
   const { user, token } = useAuth();
+  const { isDark } = useTheme();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(false);
   const [departments, setDepartments] = useState({});
@@ -1417,6 +1234,72 @@ const TeamReport = () => {
     }
   };
 
+  const exportPDF = () => {
+    const doc = new jsPDF();
+    
+    // Title
+    doc.setFontSize(20);
+    doc.text('Team Work Report', 14, 25);
+    
+    // Date
+    doc.setFontSize(12);
+    doc.text(`Generated on: ${new Date().toLocaleDateString('en-IN')}`, 14, 35);
+    
+    // Table headers
+    const headers = [
+      'Date', 'Employee', 'Department', 'Team', 'Manager', 'Task Details', 'Status'
+    ];
+    
+    // Table data
+    const data = [];
+    reports.forEach(report => {
+      report.tasks.forEach(task => {
+        data.push([
+          report.date,
+          report.employee_name,
+          report.department,
+          report.team,
+          report.reporting_manager,
+          task.details.substring(0, 50) + (task.details.length > 50 ? '...' : ''),
+          task.status
+        ]);
+      });
+    });
+    
+    // Generate table
+    doc.autoTable({
+      head: [headers],
+      body: data,
+      startY: 45,
+      styles: {
+        fontSize: 8,
+        cellPadding: 2,
+      },
+      headStyles: {
+        fillColor: [147, 51, 234], // Purple color
+        textColor: [255, 255, 255]
+      },
+      alternateRowStyles: {
+        fillColor: [248, 250, 252]
+      },
+      margin: { top: 45 }
+    });
+    
+    // Footer
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(10);
+      doc.text(
+        'For any technical clarification, kindly reach out to Datateam-STC AP',
+        14,
+        doc.internal.pageSize.height - 10
+      );
+    }
+    
+    doc.save('team_work_report.pdf');
+  };
+
   const getTeams = () => {
     return filters.department && filters.department !== 'All Departments' 
       ? Object.keys(departments[filters.department] || {}) 
@@ -1433,15 +1316,26 @@ const TeamReport = () => {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-8">
-      <h2 className="text-2xl font-bold text-gray-900 mb-8">
+    <motion.div 
+      initial="initial"
+      animate="in"
+      exit="out"
+      variants={pageVariants}
+      transition={pageTransition}
+      className={`${
+        isDark ? 'bg-gray-800 text-white' : 'bg-white'
+      } rounded-2xl shadow-lg p-8`}
+    >
+      <h2 className="text-2xl font-bold mb-8">
         RM's Team Work Report
       </h2>
 
       {/* Filters */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className={`block text-sm font-medium ${
+            isDark ? 'text-gray-300' : 'text-gray-700'
+          } mb-2`}>
             Filter by Department
           </label>
           <select
@@ -1452,7 +1346,11 @@ const TeamReport = () => {
               team: '',
               manager: ''
             })}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className={`w-full px-4 py-3 border ${
+              isDark 
+                ? 'border-gray-600 bg-gray-700 text-white' 
+                : 'border-gray-300 bg-white'
+            } rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200`}
           >
             <option value="">All Departments</option>
             {Object.keys(departments).map(dept => (
@@ -1462,7 +1360,9 @@ const TeamReport = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className={`block text-sm font-medium ${
+            isDark ? 'text-gray-300' : 'text-gray-700'
+          } mb-2`}>
             Filter by Team
           </label>
           <select
@@ -1472,7 +1372,11 @@ const TeamReport = () => {
               team: e.target.value,
               manager: ''
             })}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className={`w-full px-4 py-3 border ${
+              isDark 
+                ? 'border-gray-600 bg-gray-700 text-white' 
+                : 'border-gray-300 bg-white'
+            } rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200`}
             disabled={!filters.department}
           >
             <option value="">All Teams</option>
@@ -1483,7 +1387,9 @@ const TeamReport = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className={`block text-sm font-medium ${
+            isDark ? 'text-gray-300' : 'text-gray-700'
+          } mb-2`}>
             Filter by Reporting Manager
           </label>
           <select
@@ -1492,7 +1398,11 @@ const TeamReport = () => {
               ...filters,
               manager: e.target.value
             })}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className={`w-full px-4 py-3 border ${
+              isDark 
+                ? 'border-gray-600 bg-gray-700 text-white' 
+                : 'border-gray-300 bg-white'
+            } rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200`}
             disabled={!filters.team}
           >
             <option value="">All Reporting Managers</option>
@@ -1503,46 +1413,105 @@ const TeamReport = () => {
         </div>
       </div>
 
-      <div className="mb-6">
-        <button
+      <div className="flex gap-4 mb-6">
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={exportCSV}
           className="px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition duration-200"
         >
           📄 Export CSV
-        </button>
+        </motion.button>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={exportPDF}
+          className="px-6 py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition duration-200"
+        >
+          📄 Export PDF
+        </motion.button>
       </div>
 
       {/* Reports Table */}
       {loading ? (
-        <div className="text-center py-8">Loading reports...</div>
+        <div className="text-center py-8">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            className="text-4xl mb-4"
+          >
+            ⏳
+          </motion.div>
+          <div>Loading reports...</div>
+        </div>
       ) : reports.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">No reports found</div>
+        <div className="text-center py-8">
+          <div className="text-6xl mb-4">📋</div>
+          <div className={isDark ? 'text-gray-400' : 'text-gray-500'}>No reports found</div>
+        </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse border border-gray-300">
+          <table className={`w-full border-collapse border ${
+            isDark ? 'border-gray-600' : 'border-gray-300'
+          }`}>
             <thead>
-              <tr className="bg-gray-50">
-                <th className="border border-gray-300 px-4 py-3 text-left font-semibold">Date</th>
-                <th className="border border-gray-300 px-4 py-3 text-left font-semibold">Employee Name</th>
-                <th className="border border-gray-300 px-4 py-3 text-left font-semibold">Department</th>
-                <th className="border border-gray-300 px-4 py-3 text-left font-semibold">Team</th>
-                <th className="border border-gray-300 px-4 py-3 text-left font-semibold">Reporting Manager</th>
-                <th className="border border-gray-300 px-4 py-3 text-left font-semibold">Status</th>
-                <th className="border border-gray-300 px-4 py-3 text-left font-semibold">Tasks</th>
+              <tr className={isDark ? 'bg-gray-700' : 'bg-gray-50'}>
+                <th className={`border ${
+                  isDark ? 'border-gray-600' : 'border-gray-300'
+                } px-4 py-3 text-left font-semibold`}>Date</th>
+                <th className={`border ${
+                  isDark ? 'border-gray-600' : 'border-gray-300'
+                } px-4 py-3 text-left font-semibold`}>Employee Name</th>
+                <th className={`border ${
+                  isDark ? 'border-gray-600' : 'border-gray-300'
+                } px-4 py-3 text-left font-semibold`}>Department</th>
+                <th className={`border ${
+                  isDark ? 'border-gray-600' : 'border-gray-300'
+                } px-4 py-3 text-left font-semibold`}>Team</th>
+                <th className={`border ${
+                  isDark ? 'border-gray-600' : 'border-gray-300'
+                } px-4 py-3 text-left font-semibold`}>Reporting Manager</th>
+                <th className={`border ${
+                  isDark ? 'border-gray-600' : 'border-gray-300'
+                } px-4 py-3 text-left font-semibold`}>Status</th>
+                <th className={`border ${
+                  isDark ? 'border-gray-600' : 'border-gray-300'
+                } px-4 py-3 text-left font-semibold`}>Tasks</th>
                 {user?.role === 'manager' && (
-                  <th className="border border-gray-300 px-4 py-3 text-left font-semibold">Actions</th>
+                  <th className={`border ${
+                    isDark ? 'border-gray-600' : 'border-gray-300'
+                  } px-4 py-3 text-left font-semibold`}>Actions</th>
                 )}
               </tr>
             </thead>
             <tbody>
               {reports.map((report) => (
-                <tr key={report.id} className="hover:bg-gray-50">
-                  <td className="border border-gray-300 px-4 py-3">{report.date}</td>
-                  <td className="border border-gray-300 px-4 py-3">{report.employee_name}</td>
-                  <td className="border border-gray-300 px-4 py-3">{report.department}</td>
-                  <td className="border border-gray-300 px-4 py-3">{report.team}</td>
-                  <td className="border border-gray-300 px-4 py-3">{report.reporting_manager}</td>
-                  <td className="border border-gray-300 px-4 py-3">
+                <motion.tr 
+                  key={report.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className={`${
+                    isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
+                  } transition-all duration-200`}
+                >
+                  <td className={`border ${
+                    isDark ? 'border-gray-600' : 'border-gray-300'
+                  } px-4 py-3`}>{report.date}</td>
+                  <td className={`border ${
+                    isDark ? 'border-gray-600' : 'border-gray-300'
+                  } px-4 py-3`}>{report.employee_name}</td>
+                  <td className={`border ${
+                    isDark ? 'border-gray-600' : 'border-gray-300'
+                  } px-4 py-3`}>{report.department}</td>
+                  <td className={`border ${
+                    isDark ? 'border-gray-600' : 'border-gray-300'
+                  } px-4 py-3`}>{report.team}</td>
+                  <td className={`border ${
+                    isDark ? 'border-gray-600' : 'border-gray-300'
+                  } px-4 py-3`}>{report.reporting_manager}</td>
+                  <td className={`border ${
+                    isDark ? 'border-gray-600' : 'border-gray-300'
+                  } px-4 py-3`}>
                     <div className="flex flex-wrap gap-1">
                       {report.tasks.map((task, idx) => (
                         <span key={idx} className={`px-2 py-1 rounded-full text-xs ${
@@ -1556,7 +1525,9 @@ const TeamReport = () => {
                       ))}
                     </div>
                   </td>
-                  <td className="border border-gray-300 px-4 py-3">
+                  <td className={`border ${
+                    isDark ? 'border-gray-600' : 'border-gray-300'
+                  } px-4 py-3`}>
                     {editingReport === report.id ? (
                       <div className="space-y-2">
                         {editTasks.map((task, idx) => (
@@ -1568,7 +1539,11 @@ const TeamReport = () => {
                                 newTasks[idx].details = e.target.value;
                                 setEditTasks(newTasks);
                               }}
-                              className="flex-1 px-2 py-1 border rounded text-sm"
+                              className={`flex-1 px-2 py-1 border rounded text-sm ${
+                                isDark 
+                                  ? 'border-gray-600 bg-gray-700 text-white' 
+                                  : 'border-gray-300 bg-white'
+                              }`}
                               rows="2"
                             />
                             <select
@@ -1578,7 +1553,11 @@ const TeamReport = () => {
                                 newTasks[idx].status = e.target.value;
                                 setEditTasks(newTasks);
                               }}
-                              className="px-2 py-1 border rounded text-sm"
+                              className={`px-2 py-1 border rounded text-sm ${
+                                isDark 
+                                  ? 'border-gray-600 bg-gray-700 text-white' 
+                                  : 'border-gray-300 bg-white'
+                              }`}
                             >
                               {statusOptions.map(status => (
                                 <option key={status} value={status}>{status}</option>
@@ -1599,45 +1578,55 @@ const TeamReport = () => {
                   </td>
                   
                   {user?.role === 'manager' && (
-                    <td className="border border-gray-300 px-4 py-3">
+                    <td className={`border ${
+                      isDark ? 'border-gray-600' : 'border-gray-300'
+                    } px-4 py-3`}>
                       {editingReport === report.id ? (
                         <div className="flex gap-2">
-                          <button
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
                             onClick={() => saveEdits(report.id)}
-                            className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+                            className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition-all duration-200"
                           >
                             Save
-                          </button>
-                          <button
+                          </motion.button>
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
                             onClick={() => setEditingReport(null)}
-                            className="px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700"
+                            className="px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700 transition-all duration-200"
                           >
                             Cancel
-                          </button>
+                          </motion.button>
                         </div>
                       ) : (
-                        <button
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
                           onClick={() => startEditing(report)}
-                          className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                          className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-all duration-200"
                         >
                           ✏️ Edit
-                        </button>
+                        </motion.button>
                       )}
                     </td>
                   )}
-                </tr>
+                </motion.tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
-    </div>
+      <Footer />
+    </motion.div>
   );
 };
 
 // Summary Report Component
 const SummaryReport = () => {
   const { token } = useAuth();
+  const { isDark } = useTheme();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(false);
   const [departments, setDepartments] = useState({});
@@ -1689,52 +1678,138 @@ const SummaryReport = () => {
   };
 
   const exportPDF = async () => {
-    // Note: This is a placeholder. In a real implementation, you'd use a library like jsPDF
-    alert('PDF export functionality would be implemented here using a PDF generation library');
+    const doc = new jsPDF();
+    
+    doc.setFontSize(20);
+    doc.text('Team Summary Report', 14, 25);
+    
+    doc.setFontSize(12);
+    doc.text(`Generated on: ${new Date().toLocaleDateString('en-IN')}`, 14, 35);
+    
+    if (fromDate || toDate) {
+      doc.text(`Date Range: ${fromDate || 'All'} to ${toDate || 'All'}`, 14, 45);
+    }
+    
+    // Summary statistics
+    const completedTasks = reports.reduce((acc, report) => 
+      acc + report.tasks.filter(task => task.status === 'Completed').length, 0);
+    const wipTasks = reports.reduce((acc, report) => 
+      acc + report.tasks.filter(task => task.status === 'WIP').length, 0);
+    const delayedTasks = reports.reduce((acc, report) => 
+      acc + report.tasks.filter(task => task.status === 'Delayed').length, 0);
+    
+    doc.text(`Total Reports: ${reports.length}`, 14, 60);
+    doc.text(`Completed Tasks: ${completedTasks}`, 14, 70);
+    doc.text(`WIP Tasks: ${wipTasks}`, 14, 80);
+    doc.text(`Delayed Tasks: ${delayedTasks}`, 14, 90);
+    
+    // Detailed reports
+    let yPos = 110;
+    reports.forEach((report) => {
+      if (yPos > 250) {
+        doc.addPage();
+        yPos = 20;
+      }
+      
+      doc.setFontSize(10);
+      doc.text(`${report.employee_name} - ${report.date}`, 14, yPos);
+      doc.text(`${report.department} → ${report.team} → ${report.reporting_manager}`, 14, yPos + 10);
+      
+      report.tasks.forEach((task, taskIndex) => {
+        if (yPos + 20 + (taskIndex * 10) > 270) {
+          doc.addPage();
+          yPos = 20;
+        }
+        doc.text(`• ${task.details.substring(0, 80)}... [${task.status}]`, 20, yPos + 20 + (taskIndex * 10));
+      });
+      
+      yPos += 30 + (report.tasks.length * 10);
+    });
+    
+    // Footer
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(10);
+      doc.text(
+        'For any technical clarification, kindly reach out to Datateam-STC AP',
+        14,
+        doc.internal.pageSize.height - 10
+      );
+    }
+    
+    doc.save('team_summary_report.pdf');
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-8">
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">Team Summary Report</h2>
+    <motion.div 
+      initial="initial"
+      animate="in"
+      exit="out"
+      variants={pageVariants}
+      transition={pageTransition}
+      className={`${
+        isDark ? 'bg-gray-800 text-white' : 'bg-white'
+      } rounded-2xl shadow-lg p-8`}
+    >
+      <h2 className="text-2xl font-bold mb-4">Team Summary Report</h2>
       
-      <p className="text-gray-600 mb-8">
+      <p className={`${isDark ? 'text-gray-400' : 'text-gray-600'} mb-8`}>
         Hierarchical view: Date → Department → Team → Manager → Employee → Tasks → Status
       </p>
 
       {/* Filters */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className={`block text-sm font-medium ${
+            isDark ? 'text-gray-300' : 'text-gray-700'
+          } mb-2`}>
             From Date
           </label>
           <input
             type="date"
             value={fromDate}
             onChange={(e) => setFromDate(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className={`w-full px-4 py-3 border ${
+              isDark 
+                ? 'border-gray-600 bg-gray-700 text-white' 
+                : 'border-gray-300 bg-white'
+            } rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200`}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className={`block text-sm font-medium ${
+            isDark ? 'text-gray-300' : 'text-gray-700'
+          } mb-2`}>
             To Date
           </label>
           <input
             type="date"
             value={toDate}
             onChange={(e) => setToDate(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className={`w-full px-4 py-3 border ${
+              isDark 
+                ? 'border-gray-600 bg-gray-700 text-white' 
+                : 'border-gray-300 bg-white'
+            } rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200`}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className={`block text-sm font-medium ${
+            isDark ? 'text-gray-300' : 'text-gray-700'
+          } mb-2`}>
             Filter by Department
           </label>
           <select
             value={selectedDepartment}
             onChange={(e) => setSelectedDepartment(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className={`w-full px-4 py-3 border ${
+              isDark 
+                ? 'border-gray-600 bg-gray-700 text-white' 
+                : 'border-gray-300 bg-white'
+            } rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200`}
           >
             <option value="">All Departments</option>
             {Object.keys(departments).map(dept => (
@@ -1745,89 +1820,144 @@ const SummaryReport = () => {
       </div>
 
       <div className="flex gap-4 mb-6">
-        <button
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={fetchReports}
           className="px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition duration-200"
         >
           🔍 Apply Filters
-        </button>
-        <button
+        </motion.button>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={clearFilters}
           className="px-6 py-3 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 transition duration-200"
         >
           🗑️ Clear Filters
-        </button>
-        <button
+        </motion.button>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={exportPDF}
           className="px-6 py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition duration-200"
         >
           📄 Export PDF
-        </button>
+        </motion.button>
       </div>
 
       {/* Reports Display */}
       {loading ? (
         <div className="text-center py-12">
-          <div className="text-6xl mb-4">📊</div>
-          <div className="text-gray-500">Loading reports...</div>
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            className="text-6xl mb-4"
+          >
+            📊
+          </motion.div>
+          <div className={isDark ? 'text-gray-400' : 'text-gray-500'}>Loading reports...</div>
         </div>
       ) : reports.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-6xl mb-4">📊</div>
-          <div className="text-gray-500 text-lg font-medium">No reports available</div>
-          <div className="text-gray-400 mt-2">Submit some reports to see the team summary</div>
+          <div className={`${isDark ? 'text-gray-400' : 'text-gray-500'} text-lg font-medium`}>No reports available</div>
+          <div className={`${isDark ? 'text-gray-500' : 'text-gray-400'} mt-2`}>Submit some reports to see the team summary</div>
         </div>
       ) : (
         <div className="space-y-6">
           {/* Summary Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-blue-50 rounded-xl p-4">
-              <div className="text-2xl font-bold text-blue-800">{reports.length}</div>
-              <div className="text-sm text-blue-600">Total Reports</div>
-            </div>
-            
-            <div className="bg-green-50 rounded-xl p-4">
-              <div className="text-2xl font-bold text-green-800">
-                {reports.reduce((acc, report) => acc + report.tasks.filter(task => task.status === 'Completed').length, 0)}
-              </div>
-              <div className="text-sm text-green-600">Completed Tasks</div>
-            </div>
-            
-            <div className="bg-yellow-50 rounded-xl p-4">
-              <div className="text-2xl font-bold text-yellow-800">
-                {reports.reduce((acc, report) => acc + report.tasks.filter(task => task.status === 'WIP').length, 0)}
-              </div>
-              <div className="text-sm text-yellow-600">WIP Tasks</div>
-            </div>
-            
-            <div className="bg-red-50 rounded-xl p-4">
-              <div className="text-2xl font-bold text-red-800">
-                {reports.reduce((acc, report) => acc + report.tasks.filter(task => task.status === 'Delayed').length, 0)}
-              </div>
-              <div className="text-sm text-red-600">Delayed Tasks</div>
-            </div>
+            {[
+              { 
+                value: reports.length, 
+                label: "Total Reports", 
+                color: "blue",
+                icon: "📋"
+              },
+              { 
+                value: reports.reduce((acc, report) => acc + report.tasks.filter(task => task.status === 'Completed').length, 0), 
+                label: "Completed Tasks", 
+                color: "green",
+                icon: "✅"
+              },
+              { 
+                value: reports.reduce((acc, report) => acc + report.tasks.filter(task => task.status === 'WIP').length, 0), 
+                label: "WIP Tasks", 
+                color: "yellow",
+                icon: "⏳"
+              },
+              { 
+                value: reports.reduce((acc, report) => acc + report.tasks.filter(task => task.status === 'Delayed').length, 0), 
+                label: "Delayed Tasks", 
+                color: "red",
+                icon: "⚠️"
+              }
+            ].map((stat, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className={`bg-${stat.color}-50 ${
+                  isDark ? `bg-${stat.color}-900 bg-opacity-30` : ''
+                } rounded-xl p-4`}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className={`text-2xl font-bold text-${stat.color}-800 ${
+                      isDark ? `text-${stat.color}-400` : ''
+                    }`}>
+                      {stat.value}
+                    </div>
+                    <div className={`text-sm text-${stat.color}-600 ${
+                      isDark ? `text-${stat.color}-500` : ''
+                    }`}>
+                      {stat.label}
+                    </div>
+                  </div>
+                  <div className="text-2xl">{stat.icon}</div>
+                </div>
+              </motion.div>
+            ))}
           </div>
 
           {/* Detailed Reports */}
           <div className="space-y-4">
-            {reports.map((report) => (
-              <div key={report.id} className="border border-gray-200 rounded-lg p-6">
+            {reports.map((report, index) => (
+              <motion.div 
+                key={report.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className={`border ${
+                  isDark ? 'border-gray-600 bg-gray-700' : 'border-gray-200'
+                } rounded-lg p-6`}
+              >
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h4 className="font-semibold text-lg">{report.employee_name}</h4>
-                    <p className="text-gray-600">
+                    <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>
                       {report.department} → {report.team} → {report.reporting_manager}
                     </p>
-                    <p className="text-sm text-gray-500">Date: {report.date}</p>
+                    <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                      Date: {report.date}
+                    </p>
                   </div>
-                  <span className="text-sm text-gray-500">
+                  <span className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
                     Submitted: {new Date(report.submitted_at).toLocaleDateString('en-IN')}
                   </span>
                 </div>
                 
                 <div className="space-y-2">
                   {report.tasks.map((task, idx) => (
-                    <div key={idx} className="flex justify-between items-start p-3 bg-gray-50 rounded">
+                    <motion.div 
+                      key={idx}
+                      whileHover={{ scale: 1.01 }}
+                      className={`flex justify-between items-start p-3 ${
+                        isDark ? 'bg-gray-600' : 'bg-gray-50'
+                      } rounded transition-all duration-200`}
+                    >
                       <div className="flex-1">
                         <p className="text-sm">{task.details}</p>
                       </div>
@@ -1839,15 +1969,16 @@ const SummaryReport = () => {
                       }`}>
                         {task.status}
                       </span>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
       )}
-    </div>
+      <Footer />
+    </motion.div>
   );
 };
 
@@ -1857,48 +1988,71 @@ const App = () => {
   const [activeSection, setActiveSection] = useState('welcome');
 
   return (
-    <AuthProvider>
-      <AppContent 
-        isLogin={isLogin} 
-        setIsLogin={setIsLogin}
-        activeSection={activeSection}
-        setActiveSection={setActiveSection}
-      />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <AppContent 
+          isLogin={isLogin} 
+          setIsLogin={setIsLogin}
+          activeSection={activeSection}
+          setActiveSection={setActiveSection}
+        />
+      </AuthProvider>
+    </ThemeProvider>
   );
 };
 
 const AppContent = ({ isLogin, setIsLogin, activeSection, setActiveSection }) => {
   const { user, loading } = useAuth();
+  const { isDark } = useTheme();
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center">
+      <div className={`min-h-screen ${
+        isDark 
+          ? 'bg-gradient-to-br from-gray-900 to-gray-800' 
+          : 'bg-gradient-to-br from-purple-50 to-blue-50'
+      } flex items-center justify-center`}>
         <div className="text-center">
-          <div className="text-6xl mb-4">⏳</div>
-          <div className="text-gray-600">Loading...</div>
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            className="text-6xl mb-4"
+          >
+            ⏳
+          </motion.div>
+          <div className={isDark ? 'text-gray-400' : 'text-gray-600'}>Loading...</div>
         </div>
       </div>
     );
   }
 
   if (!user) {
-    return isLogin ? (
-      <Login onSwitchToSignup={() => setIsLogin(false)} />
-    ) : (
-      <Signup onSwitchToLogin={() => setIsLogin(true)} />
+    return (
+      <AnimatePresence mode="wait">
+        {isLogin ? (
+          <Login key="login" onSwitchToSignup={() => setIsLogin(false)} />
+        ) : (
+          <Signup key="signup" onSwitchToLogin={() => setIsLogin(true)} />
+        )}
+      </AnimatePresence>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-4">
+    <div className={`min-h-screen ${
+      isDark 
+        ? 'bg-gradient-to-br from-gray-900 to-gray-800' 
+        : 'bg-gradient-to-br from-purple-50 to-blue-50'
+    } p-4`}>
       <div className="max-w-7xl mx-auto">
         <Navigation activeSection={activeSection} setActiveSection={setActiveSection} />
         
-        {activeSection === 'welcome' && <Welcome />}
-        {activeSection === 'daily-report' && <DailyReport />}
-        {activeSection === 'team-report' && <TeamReport />}
-        {activeSection === 'summary-report' && <SummaryReport />}
+        <AnimatePresence mode="wait">
+          {activeSection === 'welcome' && <Welcome key="welcome" />}
+          {activeSection === 'daily-report' && <DailyReport key="daily-report" />}
+          {activeSection === 'team-report' && <TeamReport key="team-report" />}
+          {activeSection === 'summary-report' && <SummaryReport key="summary-report" />}
+        </AnimatePresence>
       </div>
     </div>
   );
