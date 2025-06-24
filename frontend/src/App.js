@@ -99,9 +99,16 @@ const AuthProvider = ({ children }) => {
     }
   };
 
-  const signup = async (name, email, password, role) => {
+  const signup = async (name, email, password, role, department = '', team = '') => {
     try {
-      const response = await axios.post(`${API}/auth/signup`, { name, email, password, role });
+      const response = await axios.post(`${API}/auth/signup`, { 
+        name, 
+        email, 
+        password, 
+        role, 
+        department, 
+        team 
+      });
       const { access_token, user: userData } = response.data;
       
       localStorage.setItem('token', access_token);
