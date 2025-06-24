@@ -17,6 +17,17 @@ from passlib.context import CryptContext
 import pandas as pd
 from io import StringIO
 from fastapi.responses import StreamingResponse
+from bson import ObjectId
+import json
+
+# Custom JSON encoder to handle MongoDB ObjectId
+class JSONEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, ObjectId):
+            return str(o)
+        if isinstance(o, datetime):
+            return o.isoformat()
+        return json.JSONEncoder.default(self, o)
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -178,6 +189,19 @@ def verify_token(token: str):
     except jwt.PyJWTError:
         return None
 
+# Helper function to convert MongoDB document to dict with proper ObjectId handling
+def convert_mongo_doc(doc):
+    if doc is None:
+        return None
+    
+    doc_dict = dict(doc)
+    
+    # Convert ObjectId to string
+    if '_id' in doc_dict:
+        doc_dict['_id'] = str(doc_dict['_id'])
+    
+    return doc_dict
+
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
     payload = verify_token(token)
@@ -196,7 +220,9 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    return UserResponse(**user)
+    # Convert MongoDB document to dict with proper ObjectId handling
+    user_dict = convert_mongo_doc(user)
+    return UserResponse(**user_dict)
 
 # Initialize database with predefined users
 async def init_database():
@@ -231,11 +257,14 @@ async def login(user_data: UserLogin):
             detail="Incorrect email or password"
         )
     
+    # Convert MongoDB document to dict with proper ObjectId handling
+    user_dict = convert_mongo_doc(user)
+    
     access_token = create_access_token(data={"sub": user["email"]})
     return {
         "access_token": access_token,
         "token_type": "bearer",
-        "user": UserResponse(**user)
+        "user": UserResponse(**user_dict)
     }
 
 @api_router.post("/auth/signup")
@@ -327,8 +356,13 @@ async def get_work_reports(
     elif to_date:
         query["date"] = {"$lte": to_date}
     
-    reports = await db.work_reports.find(query).sort("submitted_at", -1).to_list(1000)
-    return {"reports": reports}
+    cursor = db.work_reports.find(query).sort("submitted_at", -1)
+    reports = await cursor.to_list(1000)
+    
+    # Convert MongoDB documents to dict with proper ObjectId handling
+    reports_list = [convert_mongo_doc(report) for report in reports]
+    
+    return {"reports": reports_list}
 
 @api_router.put("/work-reports/{report_id}")
 async def update_work_report(
@@ -394,11 +428,15 @@ async def export_csv(
     elif to_date:
         query["date"] = {"$lte": to_date}
     
-    reports = await db.work_reports.find(query).sort("submitted_at", -1).to_list(1000)
+    cursor = db.work_reports.find(query).sort("submitted_at", -1)
+    reports = await cursor.to_list(1000)
+    
+    # Convert MongoDB documents to dict with proper ObjectId handling
+    reports_list = [convert_mongo_doc(report) for report in reports]
     
     # Flatten data for CSV
     csv_data = []
-    for report in reports:
+    for report in reports_list:
         for task in report["tasks"]:
             csv_data.append({
                 "Date": report["date"],
@@ -408,7 +446,7 @@ async def export_csv(
                 "Reporting Manager": report["reporting_manager"],
                 "Task Details": task["details"],
                 "Status": task["status"],
-                "Submitted At": report["submitted_at"].strftime("%Y-%m-%d %H:%M:%S IST")
+                "Submitted At": report["submitted_at"]
             })
     
     # Create DataFrame and convert to CSV
@@ -425,8 +463,13 @@ async def export_csv(
 
 @api_router.get("/managers")
 async def get_managers():
-    managers = await db.users.find({"role": "manager"}).to_list(1000)
-    return {"managers": [{"name": manager["name"], "email": manager["email"]} for manager in managers]}
+    cursor = db.users.find({"role": "manager"})
+    managers = await cursor.to_list(1000)
+    
+    # Convert MongoDB documents to dict with proper ObjectId handling
+    managers_list = [convert_mongo_doc(manager) for manager in managers]
+    
+    return {"managers": [{"name": manager["name"], "email": manager["email"]} for manager in managers_list]}
 
 # Include the router in the main app
 app.include_router(api_router)
