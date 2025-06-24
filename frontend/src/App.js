@@ -1,9 +1,47 @@
 import React, { useState, useEffect, createContext, useContext } from "react";
 import "./App.css";
 import axios from "axios";
+import { motion, AnimatePresence } from "framer-motion";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
+
+// Theme Context
+const ThemeContext = createContext();
+
+const useTheme = () => {
+  const context = useContext(ThemeContext);
+  if (!context) {
+    throw new Error('useTheme must be used within a ThemeProvider');
+  }
+  return context;
+};
+
+const ThemeProvider = ({ children }) => {
+  const [isDark, setIsDark] = useState(() => {
+    const saved = localStorage.getItem('theme');
+    return saved ? saved === 'dark' : false;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDark]);
+
+  const toggleTheme = () => setIsDark(!isDark);
+
+  return (
+    <ThemeContext.Provider value={{ isDark, toggleTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+};
 
 // Auth Context
 const AuthContext = createContext();
@@ -61,9 +99,9 @@ const AuthProvider = ({ children }) => {
     }
   };
 
-  const signup = async (name, email, password) => {
+  const signup = async (name, email, password, role) => {
     try {
-      const response = await axios.post(`${API}/auth/signup`, { name, email, password });
+      const response = await axios.post(`${API}/auth/signup`, { name, email, password, role });
       const { access_token, user: userData } = response.data;
       
       localStorage.setItem('token', access_token);
@@ -92,6 +130,51 @@ const AuthProvider = ({ children }) => {
   );
 };
 
+// Page transition variants
+const pageVariants = {
+  initial: {
+    opacity: 0,
+    x: 100,
+    scale: 0.95
+  },
+  in: {
+    opacity: 1,
+    x: 0,
+    scale: 1
+  },
+  out: {
+    opacity: 0,
+    x: -100,
+    scale: 0.95
+  }
+};
+
+const pageTransition = {
+  type: 'tween',
+  ease: 'anticipate',
+  duration: 0.5
+};
+
+// Footer Component
+const Footer = () => {
+  const { isDark } = useTheme();
+  
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className={`mt-8 p-4 text-center text-sm ${
+        isDark ? 'text-gray-400' : 'text-gray-600'
+      }`}
+    >
+      <p>
+        For any technical clarification, kindly reach out to{' '}
+        <span className="font-semibold text-purple-600">Datateam-STC AP</span>
+      </p>
+    </motion.div>
+  );
+};
+
 // Login Component
 const Login = ({ onSwitchToSignup }) => {
   const [email, setEmail] = useState('');
@@ -100,6 +183,7 @@ const Login = ({ onSwitchToSignup }) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -114,38 +198,77 @@ const Login = ({ onSwitchToSignup }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+    <motion.div 
+      initial="initial"
+      animate="in"
+      exit="out"
+      variants={pageVariants}
+      transition={pageTransition}
+      className={`min-h-screen ${
+        isDark 
+          ? 'bg-gradient-to-br from-gray-900 to-gray-800' 
+          : 'bg-gradient-to-br from-purple-50 to-blue-50'
+      } flex items-center justify-center p-4`}
+    >
+      <div className={`${
+        isDark ? 'bg-gray-800 text-white' : 'bg-white'
+      } rounded-2xl shadow-xl p-8 w-full max-w-md relative`}>
+        
+        {/* Theme Toggle */}
+        <button
+          onClick={toggleTheme}
+          className={`absolute top-4 right-4 p-2 rounded-lg ${
+            isDark 
+              ? 'bg-gray-700 text-yellow-400 hover:bg-gray-600' 
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          } transition-all duration-200`}
+        >
+          {isDark ? '☀️' : '🌙'}
+        </button>
+
         <div className="text-center mb-8">
-          <div className="bg-white rounded-2xl p-4 inline-block shadow-lg mb-4">
+          <motion.div 
+            whileHover={{ scale: 1.05 }}
+            className={`${isDark ? 'bg-gray-700' : 'bg-white'} rounded-2xl p-4 inline-block shadow-lg mb-4`}
+          >
             <img 
               src="https://showtimeconsulting.in/images/settings/2fd13f50.png" 
               alt="Showtime Consulting" 
               className="w-16 h-16 object-contain mx-auto"
             />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">SHOWTIME</h1>
+          </motion.div>
+          <h1 className="text-2xl font-bold">SHOWTIME</h1>
           <h2 className="text-lg text-gray-600">CONSULTING</h2>
-          <p className="text-sm text-gray-500 mt-2">Daily Work Reporting Portal</p>
+          <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'} mt-2`}>
+            Daily Work Reporting Portal
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className={`block text-sm font-medium ${
+              isDark ? 'text-gray-300' : 'text-gray-700'
+            } mb-2`}>
               Email Address
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className={`w-full px-4 py-3 border ${
+                isDark 
+                  ? 'border-gray-600 bg-gray-700 text-white' 
+                  : 'border-gray-300 bg-white'
+              } rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200`}
               placeholder="Enter your email"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className={`block text-sm font-medium ${
+              isDark ? 'text-gray-300' : 'text-gray-700'
+            } mb-2`}>
               Password
             </label>
             <div className="relative">
@@ -153,14 +276,20 @@ const Login = ({ onSwitchToSignup }) => {
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent pr-12"
+                className={`w-full px-4 py-3 border ${
+                  isDark 
+                    ? 'border-gray-600 bg-gray-700 text-white' 
+                    : 'border-gray-300 bg-white'
+                } rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent pr-12 transition-all duration-200`}
                 placeholder="Enter your password"
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${
+                  isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
+                } transition-all duration-200`}
               >
                 {showPassword ? '🙈' : '👁️'}
               </button>
@@ -168,29 +297,38 @@ const Login = ({ onSwitchToSignup }) => {
           </div>
 
           {error && (
-            <div className="text-red-600 text-sm text-center">{error}</div>
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-red-600 text-sm text-center bg-red-50 p-3 rounded-lg"
+            >
+              {error}
+            </motion.div>
           )}
 
-          <button
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             type="submit"
             disabled={loading}
             className="w-full bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700 transition duration-200 disabled:opacity-50"
           >
             {loading ? 'Signing In...' : '🔐 Sign In'}
-          </button>
+          </motion.button>
         </form>
 
         <div className="text-center mt-6">
-          <span className="text-gray-600">Don't have an account? </span>
+          <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Don't have an account? </span>
           <button
             onClick={onSwitchToSignup}
-            className="text-purple-600 hover:text-purple-700 font-medium"
+            className="text-purple-600 hover:text-purple-700 font-medium transition-all duration-200"
           >
             Create Account
           </button>
         </div>
       </div>
-    </div>
+      <Footer />
+    </motion.div>
   );
 };
 
@@ -199,17 +337,33 @@ const Signup = ({ onSwitchToLogin }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [role, setRole] = useState('employee');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { signup } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     
-    const result = await signup(name, email, password);
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      setLoading(false);
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      setLoading(false);
+      return;
+    }
+    
+    const result = await signup(name, email, password, role);
     if (!result.success) {
       setError(result.error);
     }
@@ -217,51 +371,116 @@ const Signup = ({ onSwitchToLogin }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+    <motion.div 
+      initial="initial"
+      animate="in"
+      exit="out"
+      variants={pageVariants}
+      transition={pageTransition}
+      className={`min-h-screen ${
+        isDark 
+          ? 'bg-gradient-to-br from-gray-900 to-gray-800' 
+          : 'bg-gradient-to-br from-purple-50 to-blue-50'
+      } flex items-center justify-center p-4`}
+    >
+      <div className={`${
+        isDark ? 'bg-gray-800 text-white' : 'bg-white'
+      } rounded-2xl shadow-xl p-8 w-full max-w-md relative`}>
+        
+        {/* Theme Toggle */}
+        <button
+          onClick={toggleTheme}
+          className={`absolute top-4 right-4 p-2 rounded-lg ${
+            isDark 
+              ? 'bg-gray-700 text-yellow-400 hover:bg-gray-600' 
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          } transition-all duration-200`}
+        >
+          {isDark ? '☀️' : '🌙'}
+        </button>
+
         <div className="text-center mb-8">
-          <div className="bg-white rounded-2xl p-4 inline-block shadow-lg mb-4">
+          <motion.div 
+            whileHover={{ scale: 1.05 }}
+            className={`${isDark ? 'bg-gray-700' : 'bg-white'} rounded-2xl p-4 inline-block shadow-lg mb-4`}
+          >
             <img 
               src="https://showtimeconsulting.in/images/settings/2fd13f50.png" 
               alt="Showtime Consulting" 
               className="w-16 h-16 object-contain mx-auto"
             />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">Create Account</h1>
-          <p className="text-sm text-gray-500 mt-2">Join the Daily Work Reporting Portal</p>
+          </motion.div>
+          <h1 className="text-2xl font-bold">Create Account</h1>
+          <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'} mt-2`}>
+            Join the Daily Work Reporting Portal
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className={`block text-sm font-medium ${
+              isDark ? 'text-gray-300' : 'text-gray-700'
+            } mb-2`}>
               Full Name
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className={`w-full px-4 py-3 border ${
+                isDark 
+                  ? 'border-gray-600 bg-gray-700 text-white' 
+                  : 'border-gray-300 bg-white'
+              } rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200`}
               placeholder="Enter your full name"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className={`block text-sm font-medium ${
+              isDark ? 'text-gray-300' : 'text-gray-700'
+            } mb-2`}>
               Email Address
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className={`w-full px-4 py-3 border ${
+                isDark 
+                  ? 'border-gray-600 bg-gray-700 text-white' 
+                  : 'border-gray-300 bg-white'
+              } rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200`}
               placeholder="Enter your email"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className={`block text-sm font-medium ${
+              isDark ? 'text-gray-300' : 'text-gray-700'
+            } mb-2`}>
+              Role
+            </label>
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className={`w-full px-4 py-3 border ${
+                isDark 
+                  ? 'border-gray-600 bg-gray-700 text-white' 
+                  : 'border-gray-300 bg-white'
+              } rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200`}
+            >
+              <option value="employee">👤 Employee</option>
+              <option value="manager">👔 Manager</option>
+            </select>
+          </div>
+
+          <div>
+            <label className={`block text-sm font-medium ${
+              isDark ? 'text-gray-300' : 'text-gray-700'
+            } mb-2`}>
               Password
             </label>
             <div className="relative">
@@ -269,50 +488,97 @@ const Signup = ({ onSwitchToLogin }) => {
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent pr-12"
+                className={`w-full px-4 py-3 border ${
+                  isDark 
+                    ? 'border-gray-600 bg-gray-700 text-white' 
+                    : 'border-gray-300 bg-white'
+                } rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent pr-12 transition-all duration-200`}
                 placeholder="Enter your password"
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${
+                  isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
+                } transition-all duration-200`}
               >
                 {showPassword ? '🙈' : '👁️'}
               </button>
             </div>
           </div>
 
+          <div>
+            <label className={`block text-sm font-medium ${
+              isDark ? 'text-gray-300' : 'text-gray-700'
+            } mb-2`}>
+              Confirm Password
+            </label>
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className={`w-full px-4 py-3 border ${
+                  isDark 
+                    ? 'border-gray-600 bg-gray-700 text-white' 
+                    : 'border-gray-300 bg-white'
+                } rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent pr-12 transition-all duration-200`}
+                placeholder="Confirm your password"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${
+                  isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
+                } transition-all duration-200`}
+              >
+                {showConfirmPassword ? '🙈' : '👁️'}
+              </button>
+            </div>
+          </div>
+
           {error && (
-            <div className="text-red-600 text-sm text-center">{error}</div>
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-red-600 text-sm text-center bg-red-50 p-3 rounded-lg"
+            >
+              {error}
+            </motion.div>
           )}
 
-          <button
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             type="submit"
             disabled={loading}
             className="w-full bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700 transition duration-200 disabled:opacity-50"
           >
             {loading ? 'Creating Account...' : '✨ Create Account'}
-          </button>
+          </motion.button>
         </form>
 
         <div className="text-center mt-6">
-          <span className="text-gray-600">Already have an account? </span>
+          <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Already have an account? </span>
           <button
             onClick={onSwitchToLogin}
-            className="text-purple-600 hover:text-purple-700 font-medium"
+            className="text-purple-600 hover:text-purple-700 font-medium transition-all duration-200"
           >
             Sign In
           </button>
         </div>
       </div>
-    </div>
+      <Footer />
+    </motion.div>
   );
 };
 
 // Navigation Component
 const Navigation = ({ activeSection, setActiveSection }) => {
   const { user, logout } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
 
   const sections = [
     { id: 'welcome', label: 'Welcome', icon: '🏠' },
@@ -322,23 +588,34 @@ const Navigation = ({ activeSection, setActiveSection }) => {
   ];
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+    <motion.div 
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`${
+        isDark ? 'bg-gray-800 text-white' : 'bg-white'
+      } rounded-2xl shadow-lg p-6 mb-6`}
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <img 
+          <motion.img 
+            whileHover={{ scale: 1.1, rotate: 5 }}
             src="https://showtimeconsulting.in/images/settings/2fd13f50.png" 
             alt="Showtime Consulting" 
             className="w-12 h-12 object-contain"
           />
           <div>
-            <h1 className="text-xl font-bold text-gray-900">SHOWTIME CONSULTING</h1>
-            <p className="text-sm text-gray-600">Daily Work Report</p>
+            <h1 className="text-xl font-bold">SHOWTIME CONSULTING</h1>
+            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+              Daily Work Report
+            </p>
           </div>
         </div>
         
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-600">Welcome, {user?.name}</span>
+            <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+              Welcome, {user?.name}
+            </span>
             <span className={`px-2 py-1 rounded-full text-xs ${
               user?.role === 'manager' 
                 ? 'bg-purple-100 text-purple-800' 
@@ -349,84 +626,143 @@ const Navigation = ({ activeSection, setActiveSection }) => {
           </div>
           <button
             onClick={logout}
-            className="text-red-600 hover:text-red-700 text-sm"
+            className="text-red-600 hover:text-red-700 text-sm transition-all duration-200"
           >
             🚪 Logout
           </button>
-          <button className="text-gray-400 hover:text-gray-600">🌙</button>
+          <button 
+            onClick={toggleTheme}
+            className={`p-2 rounded-lg ${
+              isDark 
+                ? 'bg-gray-700 text-yellow-400 hover:bg-gray-600' 
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            } transition-all duration-200`}
+          >
+            {isDark ? '☀️' : '🌙'}
+          </button>
         </div>
       </div>
       
       <div className="flex space-x-2 mt-6">
         {sections.map((section) => (
-          <button
+          <motion.button
             key={section.id}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setActiveSection(section.id)}
             className={`px-4 py-2 rounded-lg font-medium transition duration-200 ${
               activeSection === section.id
                 ? 'bg-purple-600 text-white'
+                : isDark
+                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
             {section.icon} {section.label}
-          </button>
+          </motion.button>
         ))}
       </div>
-    </div>
+    </motion.div>
   );
 };
 
 // Welcome Component
 const Welcome = () => {
   const { user } = useAuth();
+  const { isDark } = useTheme();
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-      <div className="bg-white rounded-2xl p-6 inline-block shadow-lg mb-6">
+    <motion.div 
+      initial="initial"
+      animate="in"
+      exit="out"
+      variants={pageVariants}
+      transition={pageTransition}
+      className={`${
+        isDark ? 'bg-gray-800 text-white' : 'bg-white'
+      } rounded-2xl shadow-lg p-8 text-center`}
+    >
+      <motion.div 
+        whileHover={{ scale: 1.05, rotate: 5 }}
+        className={`${isDark ? 'bg-gray-700' : 'bg-white'} rounded-2xl p-6 inline-block shadow-lg mb-6`}
+      >
         <img 
           src="https://showtimeconsulting.in/images/settings/2fd13f50.png" 
           alt="Showtime Consulting" 
           className="w-20 h-20 object-contain mx-auto"
         />
-      </div>
+      </motion.div>
       
-      <h1 className="text-4xl font-bold text-gray-900 mb-2">
+      <motion.h1 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="text-4xl font-bold mb-2"
+      >
         <span className="text-purple-600">SHOWTIME</span>
-      </h1>
-      <h2 className="text-xl text-gray-600 mb-6">CONSULTING</h2>
+      </motion.h1>
+      <motion.h2 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className={`text-xl ${isDark ? 'text-gray-400' : 'text-gray-600'} mb-6`}
+      >
+        CONSULTING
+      </motion.h2>
       
-      <h3 className="text-2xl font-bold text-gray-900 mb-4">
+      <motion.h3 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="text-2xl font-bold mb-4"
+      >
         Welcome to the
-      </h3>
-      <h4 className="text-2xl font-bold text-purple-600 mb-6">
+      </motion.h3>
+      <motion.h4 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+        className="text-2xl font-bold text-purple-600 mb-6"
+      >
         Daily Work Reporting Portal
-      </h4>
+      </motion.h4>
       
-      <p className="text-gray-600 max-w-2xl mx-auto leading-relaxed">
+      <motion.p 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6 }}
+        className={`${isDark ? 'text-gray-400' : 'text-gray-600'} max-w-2xl mx-auto leading-relaxed`}
+      >
         Streamline your daily work reporting with our professional, intuitive 
         platform designed for efficient team management and progress tracking.
-      </p>
+      </motion.p>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
-        <div className="bg-purple-50 rounded-xl p-6">
-          <div className="text-3xl mb-4">📝</div>
-          <h5 className="font-semibold text-gray-900 mb-2">Daily Reports</h5>
-          <p className="text-sm text-gray-600">Submit your daily work progress and task updates efficiently</p>
-        </div>
-        
-        <div className="bg-blue-50 rounded-xl p-6">
-          <div className="text-3xl mb-4">👥</div>
-          <h5 className="font-semibold text-gray-900 mb-2">Team Management</h5>
-          <p className="text-sm text-gray-600">Track team performance and manage reporting workflows</p>
-        </div>
-        
-        <div className="bg-green-50 rounded-xl p-6">
-          <div className="text-3xl mb-4">📊</div>
-          <h5 className="font-semibold text-gray-900 mb-2">Analytics</h5>
-          <p className="text-sm text-gray-600">Generate comprehensive reports and export data for analysis</p>
-        </div>
+        {[
+          { icon: "📝", title: "Daily Reports", desc: "Submit your daily work progress and task updates efficiently", color: "purple" },
+          { icon: "👥", title: "Team Management", desc: "Track team performance and manage reporting workflows", color: "blue" },
+          { icon: "📊", title: "Analytics", desc: "Generate comprehensive reports and export data for analysis", color: "green" }
+        ].map((item, index) => (
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7 + index * 0.1 }}
+            whileHover={{ scale: 1.05, y: -5 }}
+            className={`bg-${item.color}-50 ${
+              isDark ? `bg-${item.color}-900 bg-opacity-30` : ''
+            } rounded-xl p-6 cursor-pointer`}
+          >
+            <div className="text-3xl mb-4">{item.icon}</div>
+            <h5 className="font-semibold mb-2">{item.title}</h5>
+            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+              {item.desc}
+            </p>
+          </motion.div>
+        ))}
       </div>
-    </div>
+      <Footer />
+    </motion.div>
   );
 };
 
