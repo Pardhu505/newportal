@@ -689,12 +689,14 @@ const Navigation = ({ activeSection, setActiveSection }) => {
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <motion.img 
-            whileHover={{ scale: 1.1, rotate: 5 }}
-            src="https://showtimeconsulting.in/images/settings/2fd13f50.png" 
-            alt="Showtime Consulting" 
-            className="w-12 h-12 object-contain img-fluid"
-          />
+          <div className={`${isDark ? 'bg-white' : 'bg-white'} rounded-xl p-2 shadow-sm`}>
+            <motion.img 
+              whileHover={{ scale: 1.1, rotate: 5 }}
+              src="https://showtimeconsulting.in/images/settings/2fd13f50.png" 
+              alt="Showtime Consulting" 
+              className="w-12 h-12 object-contain img-fluid"
+            />
+          </div>
           <div>
             <h1 className="text-xl font-bold">SHOWTIME CONSULTING</h1>
             <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
