@@ -492,7 +492,11 @@ const Signup = ({ onSwitchToLogin }) => {
             </label>
             <select
               value={role}
-              onChange={(e) => setRole(e.target.value)}
+              onChange={(e) => {
+                setRole(e.target.value);
+                setDepartment('');
+                setTeam('');
+              }}
               className={`w-full px-4 py-3 border ${
                 isDark 
                   ? 'border-gray-600 bg-gray-700 text-white' 
@@ -503,6 +507,60 @@ const Signup = ({ onSwitchToLogin }) => {
               <option value="manager">👔 Manager</option>
             </select>
           </div>
+
+          {role === 'employee' && (
+            <>
+              <div>
+                <label className={`block text-sm font-medium ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                } mb-2`}>
+                  Department *
+                </label>
+                <select
+                  value={department}
+                  onChange={(e) => {
+                    setDepartment(e.target.value);
+                    setTeam('');
+                  }}
+                  className={`w-full px-4 py-3 border ${
+                    isDark 
+                      ? 'border-gray-600 bg-gray-700 text-white' 
+                      : 'border-gray-300 bg-white'
+                  } rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200`}
+                  required
+                >
+                  <option value="">Select Department</option>
+                  {Object.keys(departments).map(dept => (
+                    <option key={dept} value={dept}>{dept}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                } mb-2`}>
+                  Team *
+                </label>
+                <select
+                  value={team}
+                  onChange={(e) => setTeam(e.target.value)}
+                  className={`w-full px-4 py-3 border ${
+                    isDark 
+                      ? 'border-gray-600 bg-gray-700 text-white' 
+                      : 'border-gray-300 bg-white'
+                  } rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200`}
+                  required
+                  disabled={!department}
+                >
+                  <option value="">Select Team</option>
+                  {getTeams().map(teamName => (
+                    <option key={teamName} value={teamName}>{teamName}</option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
 
           <div>
             <label className={`block text-sm font-medium ${
