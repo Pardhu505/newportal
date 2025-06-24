@@ -232,7 +232,7 @@ tbody tr:hover {
 }
 
 .form-textarea {
-  @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-vertical transition-all duration-200;
+  @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-y transition-all duration-200;
 }
 
 /* Status indicator dots */
