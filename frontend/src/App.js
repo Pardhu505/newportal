@@ -1052,9 +1052,11 @@ const DailyReport = () => {
                 isDark 
                   ? 'border-gray-600 bg-gray-700 text-white' 
                   : 'border-gray-300 bg-white'
-              } rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200`}
+              } rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 ${
+                user?.team ? 'bg-gray-100 cursor-not-allowed' : ''
+              }`}
               required
-              disabled={!selectedDepartment}
+              disabled={user?.team && user?.role === 'employee' || !selectedDepartment}
             >
               <option value="">Select Team</option>
               {getTeams().map(team => (
