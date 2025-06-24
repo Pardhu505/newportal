@@ -14,7 +14,6 @@ import pytz
 import jwt
 import hashlib
 from passlib.context import CryptContext
-import pandas as pd
 from io import StringIO
 from fastapi.responses import StreamingResponse
 from mangum import Mangum
@@ -93,30 +92,57 @@ DEPARTMENT_DATA = {
 
 STATUS_OPTIONS = ["WIP", "Completed", "Yet to Start", "Delayed"]
 
-# Predefined users
+# Predefined users with actual company data
 PREDEFINED_USERS = [
-    {"name": "Lokesh Reddy", "email": "lokeshreddy@showtimeconsulting.in", "password": "Welcome@123", "role": "employee"},
-    {"name": "Vinod Kumar P", "email": "vinod.kumar@showtimeconsulting.in", "password": "Welcome@123", "role": "employee"},
-    {"name": "Tejaswini Ch", "email": "tejaswini@showtimeconsulting.in", "password": "Welcome@123", "role": "manager"},
-    {"name": "P Srinath Rao", "email": "srinath@showtimeconsulting.in", "password": "Welcome@123", "role": "manager"},
-    {"name": "Siddhartha Gautam", "email": "siddharthag@showtimeconsulting.in", "password": "Welcome@123", "role": "manager"},
-    {"name": "Akhilesh Mishra", "email": "akhilesh@showtimeconsulting.in", "password": "Welcome@123", "role": "manager"},
-    {"name": "Manoharan", "email": "manoharan@showtimeconsulting.in", "password": "Welcome@123", "role": "manager"},
-    {"name": "Nikash Kumar", "email": "nikash.kumar@showtimeconsulting.in", "password": "Welcome@123", "role": "manager"},
-    {"name": "Bapan Kumar Chanda", "email": "bapankumarchanda@showtimeconsulting.in", "password": "Welcome@123", "role": "manager"},
-    {"name": "Keerthana Sampath", "email": "keerthana.sampath@showtimeconsulting.in", "password": "Welcome@123", "role": "manager"},
-    {"name": "T.Pardhasaradhi", "email": "pardhasaradhi@showtimeconsulting.in", "password": "Welcome@123", "role": "manager"},
-    {"name": "Atia Latif", "email": "atia@showtimeconsulting.in", "password": "Welcome@123", "role": "manager"},
-    {"name": "Gurram Saikiran", "email": "gurram.saikiran@showtimeconsulting.in", "password": "Welcome@123", "role": "manager"},
-    {"name": "Himani sehgal", "email": "himani.sehgal@showtimeconsulting.in", "password": "Welcome@123", "role": "manager"},
-    {"name": "Aditya Pandit", "email": "aditya.pandit@showtimeconsulting.in", "password": "Welcome@123", "role": "manager"},
-    {"name": "Apoorva Singh", "email": "apoorva@showtimeconsulting.in", "password": "Welcome@123", "role": "manager"},
-    {"name": "Madhunisha", "email": "madhunisha@showtimeconsulting.in", "password": "Welcome@123", "role": "manager"},
-    {"name": "Challa Sravya", "email": "challa.sravya@showtimeconsulting.in", "password": "Welcome@123", "role": "manager"},
-    {"name": "Sabavat Eshwar", "email": "sabavat.eshwar@showtimeconsulting.in", "password": "Welcome@123", "role": "manager"},
-    {"name": "Robbin Sharma", "email": "rs@showtimeconsulting.in", "password": "Welcome@123", "role": "manager"},
-    {"name": "Anant Tiwari", "email": "at@showtimeconsulting.in", "password": "Welcome@123", "role": "manager"},
-    {"name": "Alimpan Banerjee", "email": "alimpan@showtimeconsulting.in", "password": "Welcome@123", "role": "manager"},
+    # Employees
+    {"name": "Lokesh Reddy", "email": "lokeshreddy@showtimeconsulting.in", "password": "Welcome@123", "role": "employee", "department": "", "team": ""},
+    {"name": "Vinod Kumar P", "email": "vinod.kumar@showtimeconsulting.in", "password": "Welcome@123", "role": "employee", "department": "", "team": ""},
+    
+    # Managers - Soul Centre
+    {"name": "Atia Latif", "email": "atia@showtimeconsulting.in", "password": "Welcome@123", "role": "manager", "department": "Soul Centre", "team": "Soul Central"},
+    {"name": "Siddharth Gautam", "email": "siddharthag@showtimeconsulting.in", "password": "Welcome@123", "role": "manager", "department": "Soul Centre", "team": "Field Team"},
+    {"name": "Gurram Saikiran", "email": "gurram.saikiran@showtimeconsulting.in", "password": "Welcome@123", "role": "manager", "department": "Soul Centre", "team": "Field Team"},
+    {"name": "Akhilesh Mishra", "email": "akhilesh@showtimeconsulting.in", "password": "Welcome@123", "role": "manager", "department": "Soul Centre", "team": "Field Team"},
+    
+    # Managers - Directors
+    {"name": "Anant Tiwari", "email": "at@showtimeconsulting.in", "password": "Welcome@123", "role": "manager", "department": "Directors", "team": "Director"},
+    {"name": "Alimpan Banerjee", "email": "alimpan@showtimeconsulting.in", "password": "Welcome@123", "role": "manager", "department": "Directors", "team": "Associate Director"},
+    
+    # Managers - Directors team
+    {"name": "Himani Sehgal", "email": "himani.sehgal@showtimeconsulting.in", "password": "Welcome@123", "role": "manager", "department": "Directors team", "team": "Directors Team"},
+    {"name": "Pawan Beniwal", "email": "pawan.beniwal@showtimeconsulting.in", "password": "Welcome@123", "role": "manager", "department": "Directors team", "team": "Directors Team"},
+    {"name": "Aditya Pandit", "email": "aditya.pandit@showtimeconsulting.in", "password": "Welcome@123", "role": "manager", "department": "Directors team", "team": "Directors Team"},
+    {"name": "Challa Sravya", "email": "challa.sravya@showtimeconsulting.in", "password": "Welcome@123", "role": "manager", "department": "Directors team", "team": "Directors Team"},
+    {"name": "Sabavat Eshwar", "email": "sabavat.eshwar@showtimeconsulting.in", "password": "Welcome@123", "role": "manager", "department": "Directors team", "team": "Directors Team"},
+    
+    # Managers - Campaign
+    {"name": "S S Manoharan", "email": "manoharan@showtimeconsulting.in", "password": "Welcome@123", "role": "manager", "department": "Campaign", "team": "Campaign"},
+    
+    # Managers - Data
+    {"name": "T. Pardhasaradhi", "email": "pardhasaradhi@showtimeconsulting.in", "password": "Welcome@123", "role": "manager", "department": "Data", "team": "Data"},
+    
+    # Managers - Media
+    {"name": "Aakanksha Tandon", "email": "aakanksha.tandon@showtimeconsulting.in", "password": "Welcome@123", "role": "manager", "department": "Media", "team": "Media"},
+    
+    # Managers - Research
+    {"name": "P. Srinath Rao", "email": "srinath@showtimeconsulting.in", "password": "Welcome@123", "role": "manager", "department": "Research", "team": "Research"},
+    
+    # Managers - DMC
+    {"name": "Madhunisha", "email": "madhunisha@showtimeconsulting.in", "password": "Welcome@123", "role": "manager", "department": "DMC", "team": "HIVE"},
+    {"name": "Apoorva Singh", "email": "apoorva@showtimeconsulting.in", "password": "Welcome@123", "role": "manager", "department": "DMC", "team": "HIVE"},
+    {"name": "Keerthana Sampath", "email": "keerthana.sampath@showtimeconsulting.in", "password": "Welcome@123", "role": "manager", "department": "DMC", "team": "Digital Communication"},
+    {"name": "Bapan Kumar Chanda", "email": "bapankumarchanda@showtimeconsulting.in", "password": "Welcome@123", "role": "manager", "department": "DMC", "team": "Digital Production"},
+    
+    # Managers - HR
+    {"name": "Tejaswini Ch", "email": "tejaswini@showtimeconsulting.in", "password": "Welcome@123", "role": "manager", "department": "HR", "team": "HR"},
+    
+    # Managers - Admin
+    {"name": "Nikash Kumar", "email": "nikash.kumar@showtimeconsulting.in", "password": "Welcome@123", "role": "manager", "department": "Admin", "team": "Operations"},
+    
+    # Additional Managers
+    {"name": "Robbin Sharma", "email": "rs@showtimeconsulting.in", "password": "Welcome@123", "role": "manager", "department": "", "team": ""},
+    
+    # Test Employee (for testing purposes)
     {"name": "Test Employee", "email": "test@showtimeconsulting.in", "password": "Welcome@123", "role": "employee", "department": "Data", "team": "Data"},
 ]
 
@@ -253,14 +279,18 @@ async def init_database():
         await db.users.insert_many(users_to_insert)
         print("Database initialized with predefined users")
     else:
-        # Update test employee with department and team if not already set
-        test_user = await db.users.find_one({"email": "test@showtimeconsulting.in"})
-        if test_user and not test_user.get("department"):
-            await db.users.update_one(
-                {"email": "test@showtimeconsulting.in"},
-                {"$set": {"department": "Data", "team": "Data"}}
-            )
-            print("Updated test employee with department and team data")
+        # Update existing users with department and team data where missing
+        for user_data in PREDEFINED_USERS:
+            existing_user = await db.users.find_one({"email": user_data["email"]})
+            if existing_user and not existing_user.get("department"):
+                await db.users.update_one(
+                    {"email": user_data["email"]},
+                    {"$set": {
+                        "department": user_data.get("department", ""),
+                        "team": user_data.get("team", "")
+                    }}
+                )
+                print(f"Updated {user_data['name']} with department and team data")
 
 @app.on_event("startup")
 async def startup_event():
@@ -449,35 +479,22 @@ async def export_csv(
     elif to_date:
         query["date"] = {"$lte": to_date}
     
-    cursor = db.work_reports.find(query).sort("submitted_at", -1)
-    reports = await cursor.to_list(1000)
+    reports = await db.work_reports.find(query).sort("submitted_at", -1).to_list(1000)
     
-    # Convert MongoDB documents to dict with proper ObjectId handling
-    reports_list = [convert_mongo_doc(report) for report in reports]
+    # Create CSV without pandas - lightweight approach
+    csv_lines = []
+    csv_lines.append("Date,Employee Name,Department,Team,Reporting Manager,Task Details,Status,Submitted At")
     
-    # Flatten data for CSV
-    csv_data = []
-    for report in reports_list:
+    for report in reports:
         for task in report["tasks"]:
-            csv_data.append({
-                "Date": report["date"],
-                "Employee Name": report["employee_name"],
-                "Department": report["department"],
-                "Team": report["team"],
-                "Reporting Manager": report["reporting_manager"],
-                "Task Details": task["details"],
-                "Status": task["status"],
-                "Submitted At": report["submitted_at"]
-            })
+            details = task["details"].replace('"', '""')
+            csv_line = f'"{report["date"]}","{report["employee_name"]}","{report["department"]}","{report["team"]}","{report["reporting_manager"]}","{details}","{task["status"]}","{report["submitted_at"].strftime("%Y-%m-%d %H:%M:%S IST")}"'
+            csv_lines.append(csv_line)
     
-    # Create DataFrame and convert to CSV
-    df = pd.DataFrame(csv_data)
-    csv_buffer = StringIO()
-    df.to_csv(csv_buffer, index=False)
-    csv_buffer.seek(0)
+    csv_content = "\n".join(csv_lines)
     
     return StreamingResponse(
-        iter([csv_buffer.getvalue()]),
+        iter([csv_content]),
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=work_reports.csv"}
     )
