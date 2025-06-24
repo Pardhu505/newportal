@@ -169,7 +169,7 @@ const Footer = () => {
     >
       <p>
         For any technical clarification, kindly reach out to{' '}
-        <span className="font-semibold text-purple-600">Datateam-STC AP</span>
+        <span className="font-semibold text-purple-600">Data Team : STC-AP | Pardhasaradhi</span>
       </p>
     </motion.div>
   );
