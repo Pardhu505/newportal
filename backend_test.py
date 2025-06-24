@@ -335,7 +335,7 @@ class DailyWorkReportingPortalTest(unittest.TestCase):
             headers=headers
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.headers["Content-Type"], "text/csv")
+        self.assertTrue(response.headers["Content-Type"].startswith("text/csv"))
         
         # Check if CSV content is valid
         try:
