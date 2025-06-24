@@ -1372,8 +1372,8 @@ const TeamReport = () => {
       }
     });
     
-    // Create the table
-    doc.autoTable({
+    // Create the table using autoTable
+    autoTable(doc, {
       head: [['Date', 'Employee', 'Department', 'Team', 'Manager', 'Task Details', 'Status']],
       body: tableData,
       startY: 50,
