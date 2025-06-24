@@ -251,6 +251,15 @@ async def init_database():
         
         await db.users.insert_many(users_to_insert)
         print("Database initialized with predefined users")
+    else:
+        # Update test employee with department and team if not already set
+        test_user = await db.users.find_one({"email": "test@showtimeconsulting.in"})
+        if test_user and not test_user.get("department"):
+            await db.users.update_one(
+                {"email": "test@showtimeconsulting.in"},
+                {"$set": {"department": "Data", "team": "Data"}}
+            )
+            print("Updated test employee with department and team data")
 
 @app.on_event("startup")
 async def startup_event():
