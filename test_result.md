@@ -122,15 +122,18 @@ backend:
 
   - task: "Department/Team Hierarchy API"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Implemented department data structure with hierarchical team mapping as provided"
+      - working: true
+        agent: "testing"
+        comment: "Department/Team Hierarchy API is working correctly. Successfully tested /api/departments endpoint which returns the hierarchical data structure, /api/status-options endpoint, and /api/managers endpoint. All endpoints return the expected data format."
 
   - task: "Work Report CRUD Operations"
     implemented: true
