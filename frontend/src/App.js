@@ -1030,7 +1030,7 @@ const DailyReport = () => {
               disabled={user?.department && user?.role === 'employee'}
             >
               <option value="">Select Department</option>
-              {Object.keys(departments).map(dept => (
+              {departments && Object.keys(departments).map(dept => (
                 <option key={dept} value={dept}>{dept}</option>
               ))}
             </select>
