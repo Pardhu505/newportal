@@ -152,15 +152,18 @@ backend:
 
   - task: "CSV Export Functionality"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Implemented CSV export for work reports with filtering capabilities using pandas"
+      - working: true
+        agent: "testing"
+        comment: "CSV Export Functionality is working correctly. Successfully tested the CSV export endpoint with different filters. The CSV format is valid and contains all the expected data fields. Fixed an issue with MongoDB ObjectId serialization."
 
   - task: "IST Timezone Implementation"
     implemented: true
