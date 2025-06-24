@@ -17,28 +17,18 @@ from passlib.context import CryptContext
 import pandas as pd
 from io import StringIO
 from fastapi.responses import StreamingResponse
-from bson import ObjectId
-import json
-
-# Custom JSON encoder to handle MongoDB ObjectId
-class JSONEncoder(json.JSONEncoder):
-    def default(self, o):
-        if isinstance(o, ObjectId):
-            return str(o)
-        if isinstance(o, datetime):
-            return o.isoformat()
-        return json.JSONEncoder.default(self, o)
+from mangum import Mangum
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 # MongoDB connection
-mongo_url = os.environ['MONGO_URL']
+mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
 client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+db = client[os.environ.get('DB_NAME', 'showtime_portal')]
 
 # Create the main app without a prefix
-app = FastAPI()
+app = FastAPI(title="Daily Work Reporting Portal API", version="1.0.0")
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
@@ -46,11 +36,22 @@ api_router = APIRouter(prefix="/api")
 # Security
 security = HTTPBearer()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-SECRET_KEY = "your-secret-key-here"  # In production, use environment variable
+SECRET_KEY = os.environ.get("SECRET_KEY", "your-secret-key-here")
 ALGORITHM = "HS256"
 
 # IST timezone
 IST = pytz.timezone('Asia/Kolkata')
+
+# CORS configuration
+CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "*").split(",")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Department and team data
 DEPARTMENT_DATA = {
