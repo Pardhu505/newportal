@@ -243,7 +243,9 @@ async def init_database():
                 name=user_data["name"],
                 email=user_data["email"],
                 password_hash=hash_password(user_data["password"]),
-                role=user_data["role"]
+                role=user_data["role"],
+                department=user_data.get("department", ""),
+                team=user_data.get("team", "")
             )
             users_to_insert.append(user.dict())
         
