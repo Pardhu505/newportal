@@ -693,7 +693,7 @@ const Navigation = ({ activeSection, setActiveSection }) => {
             whileHover={{ scale: 1.1, rotate: 5 }}
             src="https://showtimeconsulting.in/images/settings/2fd13f50.png" 
             alt="Showtime Consulting" 
-            className="w-12 h-12 object-contain"
+            className="w-12 h-12 object-contain img-fluid"
           />
           <div>
             <h1 className="text-xl font-bold">SHOWTIME CONSULTING</h1>
