@@ -1024,7 +1024,7 @@ const DailyReport = () => {
                   ? 'border-gray-600 bg-gray-700 text-white' 
                   : 'border-gray-300 bg-white'
               } rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 ${
-                user?.department ? 'bg-gray-100 cursor-not-allowed' : ''
+                (user?.department && user?.role === 'employee') ? 'bg-gray-100 cursor-not-allowed' : ''
               }`}
               required
               disabled={user?.department && user?.role === 'employee'}
