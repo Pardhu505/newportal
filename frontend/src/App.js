@@ -778,7 +778,7 @@ const Welcome = () => {
     >
       <motion.div 
         whileHover={{ scale: 1.05, rotate: 5 }}
-        className={`${isDark ? 'bg-white' : 'bg-white'} rounded-2xl p-6 inline-block shadow-lg mb-6`}
+        className="bg-white rounded-2xl p-6 inline-block shadow-lg mb-6 border-2 border-gray-100"
       >
         <img 
           src="https://showtimeconsulting.in/images/settings/2fd13f50.png" 
