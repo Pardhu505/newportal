@@ -287,7 +287,9 @@ async def signup(user_data: UserCreate):
         name=user_data.name,
         email=user_data.email,
         password_hash=hash_password(user_data.password),
-        role=user_data.role
+        role=user_data.role,
+        department=user_data.department,
+        team=user_data.team
     )
     
     await db.users.insert_one(user.dict())
