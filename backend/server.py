@@ -126,6 +126,8 @@ class User(BaseModel):
     email: str
     password_hash: str
     role: str  # "manager" or "employee"
+    department: str = ""
+    team: str = ""
     created_at: datetime = Field(default_factory=lambda: datetime.now(IST))
 
 class UserLogin(BaseModel):
