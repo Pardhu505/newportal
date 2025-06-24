@@ -198,21 +198,21 @@ const Login = ({ onSwitchToSignup }) => {
   };
 
   return (
-    <motion.div 
-      initial="initial"
-      animate="in"
-      exit="out"
-      variants={pageVariants}
-      transition={pageTransition}
-      className={`min-h-screen ${
-        isDark 
-          ? 'bg-gradient-to-br from-gray-900 to-gray-800' 
-          : 'bg-gradient-to-br from-purple-50 to-blue-50'
-      } flex items-center justify-center p-4`}
-    >
-      <div className={`${
-        isDark ? 'bg-gray-800 text-white' : 'bg-white'
-      } rounded-2xl shadow-xl p-8 w-full max-w-md relative`}>
+    <div className={`min-h-screen ${
+      isDark 
+        ? 'bg-gradient-to-br from-gray-900 to-gray-800' 
+        : 'bg-gradient-to-br from-purple-50 to-blue-50'
+    } flex flex-col items-center justify-center p-4`}>
+      <motion.div 
+        initial="initial"
+        animate="in"
+        exit="out"
+        variants={pageVariants}
+        transition={pageTransition}
+        className={`${
+          isDark ? 'bg-gray-800 text-white' : 'bg-white'
+        } rounded-2xl shadow-xl p-8 w-full max-w-md relative`}
+      >
         
         {/* Theme Toggle */}
         <button
@@ -326,8 +326,10 @@ const Login = ({ onSwitchToSignup }) => {
             Create Account
           </button>
         </div>
-      </div>
-    </motion.div>
+      </motion.div>
+      
+      <Footer />
+    </div>
   );
 };
 
