@@ -340,12 +340,32 @@ const Signup = ({ onSwitchToLogin }) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState('employee');
+  const [department, setDepartment] = useState('');
+  const [team, setTeam] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signup } = useAuth();
+  const [departments, setDepartments] = useState({});
+  const { signup, token } = useAuth();
   const { isDark, toggleTheme } = useTheme();
+
+  useEffect(() => {
+    fetchDepartments();
+  }, []);
+
+  const fetchDepartments = async () => {
+    try {
+      const response = await axios.get(`${API}/departments`);
+      setDepartments(response.data.departments);
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+    }
+  };
+
+  const getTeams = () => {
+    return department ? Object.keys(departments[department] || {}) : [];
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -363,8 +383,14 @@ const Signup = ({ onSwitchToLogin }) => {
       setLoading(false);
       return;
     }
+
+    if (role === 'employee' && (!department || !team)) {
+      setError('Please select department and team');
+      setLoading(false);
+      return;
+    }
     
-    const result = await signup(name, email, password, role);
+    const result = await signup(name, email, password, role, department, team);
     if (!result.success) {
       setError(result.error);
     }
