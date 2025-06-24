@@ -378,4 +378,27 @@ class DailyWorkReportingPortalTest(unittest.TestCase):
 
 if __name__ == "__main__":
     print(f"Testing backend API at: {API_URL}")
-    unittest.main(argv=['first-arg-is-ignored'], exit=False)
+    # Create a test suite with all tests
+    test_loader = unittest.TestLoader()
+    test_suite = test_loader.loadTestsFromTestCase(DailyWorkReportingPortalTest)
+    
+    # Run the tests with a text test runner
+    test_runner = unittest.TextTestRunner(verbosity=2)
+    test_result = test_runner.run(test_suite)
+    
+    # Print summary
+    print("\n=== TEST SUMMARY ===")
+    print(f"Total tests: {test_result.testsRun}")
+    print(f"Passed: {test_result.testsRun - len(test_result.failures) - len(test_result.errors)}")
+    print(f"Failed: {len(test_result.failures)}")
+    print(f"Errors: {len(test_result.errors)}")
+    
+    if test_result.failures:
+        print("\n=== FAILURES ===")
+        for test, error in test_result.failures:
+            print(f"{test}: {error}")
+    
+    if test_result.errors:
+        print("\n=== ERRORS ===")
+        for test, error in test_result.errors:
+            print(f"{test}: {error}")
