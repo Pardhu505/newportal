@@ -1882,7 +1882,7 @@ const SummaryReport = () => {
     });
     
     if (tableData.length > 0) {
-      doc.autoTable({
+      autoTable(doc, {
         head: [['Date', 'Employee', 'Department', 'Team', 'Manager', 'Task Details', 'Status']],
         body: tableData,
         startY: currentY,
