@@ -921,14 +921,18 @@ const DailyReport = () => {
   };
 
   const getTeams = () => {
-    return selectedDepartment ? Object.keys(departments[selectedDepartment] || {}) : [];
+    if (!selectedDepartment || !departments || !departments[selectedDepartment]) {
+      return [];
+    }
+    return Object.keys(departments[selectedDepartment]);
   };
 
   const getManagers = () => {
-    if (selectedDepartment && selectedTeam) {
-      return departments[selectedDepartment][selectedTeam] || [];
+    if (!selectedDepartment || !selectedTeam || !departments || 
+        !departments[selectedDepartment] || !departments[selectedDepartment][selectedTeam]) {
+      return [];
     }
-    return [];
+    return departments[selectedDepartment][selectedTeam] || [];
   };
 
   const addTask = () => {
