@@ -6,6 +6,16 @@
   min-height: 100vh;
 }
 
+/* Dark mode styles */
+.dark {
+  color-scheme: dark;
+}
+
+.dark body {
+  background-color: #1f2937;
+  color: #f9fafb;
+}
+
 /* Custom scrollbar for better UX */
 ::-webkit-scrollbar {
   width: 8px;
@@ -13,7 +23,10 @@
 
 ::-webkit-scrollbar-track {
   background: #f1f1f1;
-  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #374151;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -21,8 +34,16 @@
   border-radius: 4px;
 }
 
+.dark ::-webkit-scrollbar-thumb {
+  background: #6b7280;
+}
+
 ::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
 }
 
 /* Smooth transitions */
@@ -107,13 +128,25 @@ tbody tr:hover {
   background-color: rgba(139, 92, 246, 0.05);
 }
 
+.dark tbody tr:hover {
+  background-color: rgba(139, 92, 246, 0.1);
+}
+
 /* Form validation styles */
 .invalid {
   @apply border-red-500 bg-red-50;
 }
 
+.dark .invalid {
+  @apply border-red-400 bg-red-900 bg-opacity-20;
+}
+
 .valid {
   @apply border-green-500 bg-green-50;
+}
+
+.dark .valid {
+  @apply border-green-400 bg-green-900 bg-opacity-20;
 }
 
 /* Mobile responsiveness */
@@ -152,11 +185,6 @@ tbody tr:hover {
   .shadow-lg {
     box-shadow: none !important;
   }
-}
-
-/* Dark mode support (if needed later) */
-@media (prefers-color-scheme: dark) {
-  /* Dark mode styles can be added here */
 }
 
 /* Custom utilities */
@@ -227,12 +255,24 @@ tbody tr:hover {
   @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200;
 }
 
+.dark .form-input {
+  @apply border-gray-600 bg-gray-700 text-white;
+}
+
 .form-select {
   @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white transition-all duration-200;
 }
 
+.dark .form-select {
+  @apply border-gray-600 bg-gray-700 text-white;
+}
+
 .form-textarea {
   @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-y transition-all duration-200;
+}
+
+.dark .form-textarea {
+  @apply border-gray-600 bg-gray-700 text-white;
 }
 
 /* Status indicator dots */
@@ -254,4 +294,150 @@ tbody tr:hover {
 
 .status-dot.yet-to-start {
   @apply bg-gray-500;
+}
+
+/* Page transition animations */
+.page-transition {
+  transition: all 0.5s ease-in-out;
+}
+
+/* Dark mode specific animations */
+.dark .bg-white {
+  background-color: #374151 !important;
+}
+
+.dark .text-gray-900 {
+  color: #f9fafb !important;
+}
+
+.dark .text-gray-700 {
+  color: #d1d5db !important;
+}
+
+.dark .text-gray-600 {
+  color: #9ca3af !important;
+}
+
+.dark .border-gray-300 {
+  border-color: #6b7280 !important;
+}
+
+/* Theme toggle animation */
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+}
+
+.theme-toggle:hover {
+  animation: bounce 0.6s;
+}
+
+/* Footer styles */
+.footer-link {
+  @apply text-purple-600 font-semibold hover:text-purple-700 transition-colors duration-200;
+}
+
+.dark .footer-link {
+  @apply text-purple-400 hover:text-purple-300;
+}
+
+/* Export button styles */
+.export-btn {
+  @apply inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm transition-all duration-200;
+}
+
+.export-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* PDF table styles for better rendering */
+.pdf-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 12px;
+}
+
+.pdf-table th,
+.pdf-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.pdf-table th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+/* Mobile-specific improvements */
+@media (max-width: 640px) {
+  .mobile-responsive {
+    padding: 1rem;
+  }
+  
+  .mobile-text {
+    font-size: 0.875rem;
+  }
+  
+  .mobile-button {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* Accessibility improvements */
+.focus-visible:focus {
+  outline: 2px solid #8b5cf6;
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .btn-primary {
+    border: 2px solid currentColor;
+  }
+  
+  .form-input {
+    border-width: 2px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Print optimizations */
+@media print {
+  .dark {
+    color-scheme: light;
+  }
+  
+  .dark * {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .shadow-lg,
+  .shadow-xl {
+    box-shadow: none !important;
+  }
+  
+  .rounded-lg,
+  .rounded-xl,
+  .rounded-2xl {
+    border: 1px solid #ccc !important;
+  }
 }
