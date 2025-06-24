@@ -689,7 +689,7 @@ const Navigation = ({ activeSection, setActiveSection }) => {
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <div className={`${isDark ? 'bg-white' : 'bg-white'} rounded-xl p-2 shadow-sm`}>
+          <div className="bg-white rounded-xl p-2 shadow-lg border-2 border-gray-100">
             <motion.img 
               whileHover={{ scale: 1.1, rotate: 5 }}
               src="https://showtimeconsulting.in/images/settings/2fd13f50.png" 
