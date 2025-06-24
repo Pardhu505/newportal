@@ -419,25 +419,31 @@ tbody tr:hover {
   }
 }
 
-/* Print optimizations */
-@media print {
-  .dark {
-    color-scheme: light;
-  }
-  
-  .dark * {
-    background: white !important;
-    color: black !important;
-  }
-  
-  .shadow-lg,
-  .shadow-xl {
-    box-shadow: none !important;
-  }
-  
-  .rounded-lg,
-  .rounded-xl,
-  .rounded-2xl {
-    border: 1px solid #ccc !important;
-  }
+/* Hide any external branding */
+[class*="emergent"], 
+[class*="Emergent"],
+[class*="made-with"],
+[id*="emergent"],
+[id*="Emergent"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* Hide any iframes or external content */
+iframe[src*="emergent"],
+iframe[src*="Emergent"] {
+  display: none !important;
+}
+
+/* Hide any watermarks or branding overlays */
+div[style*="position: fixed"],
+div[style*="position: absolute"][style*="bottom"],
+div[style*="position: absolute"][style*="top"] {
+  z-index: -1000 !important;
+}
+
+/* Ensure main content is always visible */
+.main-content {
+  z-index: 1000 !important;
 }
