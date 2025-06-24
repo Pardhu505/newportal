@@ -1812,14 +1812,26 @@ const SummaryReport = () => {
   const exportPDF = async () => {
     const doc = new jsPDF();
     
-    doc.setFontSize(20);
-    doc.text('Team Summary Report', 14, 25);
+    // Title and Header
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Team Summary Report', 14, 20);
     
+    // Company branding
     doc.setFontSize(12);
-    doc.text(`Generated on: ${new Date().toLocaleDateString('en-IN')}`, 14, 35);
+    doc.setFont('helvetica', 'normal');
+    doc.text('SHOWTIME CONSULTING', 14, 30);
+    
+    // Date and filters info
+    doc.setFontSize(10);
+    doc.text(`Generated on: ${new Date().toLocaleDateString('en-IN')} at ${new Date().toLocaleTimeString('en-IN')}`, 14, 40);
     
     if (fromDate || toDate) {
-      doc.text(`Date Range: ${fromDate || 'All'} to ${toDate || 'All'}`, 14, 45);
+      doc.text(`Date Range: ${fromDate || 'All'} to ${toDate || 'All'}`, 14, 48);
+    }
+    
+    if (selectedDepartment) {
+      doc.text(`Department: ${selectedDepartment}`, 14, 56);
     }
     
     // Summary statistics
@@ -1829,48 +1841,103 @@ const SummaryReport = () => {
       acc + report.tasks.filter(task => task.status === 'WIP').length, 0);
     const delayedTasks = reports.reduce((acc, report) => 
       acc + report.tasks.filter(task => task.status === 'Delayed').length, 0);
+    const yetToStartTasks = reports.reduce((acc, report) => 
+      acc + report.tasks.filter(task => task.status === 'Yet to Start').length, 0);
     
-    doc.text(`Total Reports: ${reports.length}`, 14, 60);
-    doc.text(`Completed Tasks: ${completedTasks}`, 14, 70);
-    doc.text(`WIP Tasks: ${wipTasks}`, 14, 80);
-    doc.text(`Delayed Tasks: ${delayedTasks}`, 14, 90);
+    let currentY = selectedDepartment ? 70 : 62;
     
-    // Detailed reports
-    let yPos = 110;
-    reports.forEach((report) => {
-      if (yPos > 250) {
-        doc.addPage();
-        yPos = 20;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Summary Statistics:', 14, currentY);
+    currentY += 8;
+    
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Total Reports: ${reports.length}`, 14, currentY);
+    doc.text(`Completed Tasks: ${completedTasks}`, 70, currentY);
+    currentY += 8;
+    doc.text(`WIP Tasks: ${wipTasks}`, 14, currentY);
+    doc.text(`Delayed Tasks: ${delayedTasks}`, 70, currentY);
+    if (yetToStartTasks > 0) {
+      currentY += 8;
+      doc.text(`Yet to Start Tasks: ${yetToStartTasks}`, 14, currentY);
+    }
+    
+    currentY += 15;
+    
+    // Detailed reports table
+    const tableData = [];
+    reports.forEach(report => {
+      if (report.tasks && report.tasks.length > 0) {
+        report.tasks.forEach((task, taskIndex) => {
+          tableData.push([
+            report.date,
+            report.employee_name,
+            report.department,
+            report.team,
+            report.reporting_manager,
+            task.details,
+            task.status
+          ]);
+        });
       }
-      
-      doc.setFontSize(10);
-      doc.text(`${report.employee_name} - ${report.date}`, 14, yPos);
-      doc.text(`${report.department} → ${report.team} → ${report.reporting_manager}`, 14, yPos + 10);
-      
-      report.tasks.forEach((task, taskIndex) => {
-        if (yPos + 20 + (taskIndex * 10) > 270) {
-          doc.addPage();
-          yPos = 20;
-        }
-        doc.text(`• ${task.details.substring(0, 80)}... [${task.status}]`, 20, yPos + 20 + (taskIndex * 10));
-      });
-      
-      yPos += 30 + (report.tasks.length * 10);
     });
     
-    // Footer
+    if (tableData.length > 0) {
+      doc.autoTable({
+        head: [['Date', 'Employee', 'Department', 'Team', 'Manager', 'Task Details', 'Status']],
+        body: tableData,
+        startY: currentY,
+        styles: {
+          fontSize: 7,
+          cellPadding: 2,
+          overflow: 'linebreak',
+          halign: 'left',
+          valign: 'top'
+        },
+        headStyles: {
+          fillColor: [147, 51, 234],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          fontSize: 8
+        },
+        alternateRowStyles: {
+          fillColor: [248, 250, 252]
+        },
+        columnStyles: {
+          0: { cellWidth: 18 }, // Date
+          1: { cellWidth: 22 }, // Employee
+          2: { cellWidth: 22 }, // Department
+          3: { cellWidth: 18 }, // Team
+          4: { cellWidth: 22 }, // Manager
+          5: { cellWidth: 45 }, // Task Details
+          6: { cellWidth: 18 }  // Status
+        },
+        theme: 'striped'
+      });
+    }
+    
+    // Add footer on each page
     const pageCount = doc.internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
-      doc.setFontSize(10);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'italic');
+      
+      // Page number
       doc.text(
-        'For any technical clarification, kindly reach out to Datateam-STC AP',
+        `Page ${i} of ${pageCount}`,
+        doc.internal.pageSize.width - 30,
+        doc.internal.pageSize.height - 15
+      );
+      
+      // Contact footer
+      doc.text(
+        'For any technical clarification, kindly reach out to Data Team : STC-AP | Pardhasaradhi',
         14,
         doc.internal.pageSize.height - 10
       );
     }
     
-    doc.save('team_summary_report.pdf');
+    doc.save(`Team_Summary_Report_${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
   return (
