@@ -666,10 +666,103 @@ const Navigation = ({ activeSection, setActiveSection }) => {
   );
 };
 
-// Welcome Component
-const Welcome = () => {
-  const { user } = useAuth();
+// Daily Report Component
+const DailyReport = () => {
+  const { user, token } = useAuth();
   const { isDark } = useTheme();
+  const [departments, setDepartments] = useState({});
+  const [selectedDepartment, setSelectedDepartment] = useState('');
+  const [selectedTeam, setSelectedTeam] = useState('');
+  const [selectedManager, setSelectedManager] = useState('');
+  const [employeeName, setEmployeeName] = useState(user?.name || '');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [tasks, setTasks] = useState([{ id: Date.now(), details: '', status: 'WIP' }]);
+  const [statusOptions, setStatusOptions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    fetchDepartments();
+    fetchStatusOptions();
+  }, []);
+
+  const fetchDepartments = async () => {
+    try {
+      const response = await axios.get(`${API}/departments`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setDepartments(response.data.departments);
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+    }
+  };
+
+  const fetchStatusOptions = async () => {
+    try {
+      const response = await axios.get(`${API}/status-options`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setStatusOptions(response.data.status_options);
+    } catch (error) {
+      console.error('Error fetching status options:', error);
+    }
+  };
+
+  const getTeams = () => {
+    return selectedDepartment ? Object.keys(departments[selectedDepartment] || {}) : [];
+  };
+
+  const getManagers = () => {
+    if (selectedDepartment && selectedTeam) {
+      return departments[selectedDepartment][selectedTeam] || [];
+    }
+    return [];
+  };
+
+  const addTask = () => {
+    setTasks([...tasks, { id: Date.now(), details: '', status: 'WIP' }]);
+  };
+
+  const updateTask = (id, field, value) => {
+    setTasks(tasks.map(task => 
+      task.id === id ? { ...task, [field]: value } : task
+    ));
+  };
+
+  const removeTask = (id) => {
+    if (tasks.length > 1) {
+      setTasks(tasks.filter(task => task.id !== id));
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage('');
+
+    try {
+      const reportData = {
+        employee_name: employeeName,
+        department: selectedDepartment,
+        team: selectedTeam,
+        reporting_manager: selectedManager,
+        date: date,
+        tasks: tasks.map(({ id, ...task }) => task)
+      };
+
+      await axios.post(`${API}/work-reports`, reportData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      setMessage('Report submitted successfully!');
+      // Reset form
+      setTasks([{ id: Date.now(), details: '', status: 'WIP' }]);
+    } catch (error) {
+      setMessage('Error submitting report. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <motion.div 
@@ -680,91 +773,260 @@ const Welcome = () => {
       transition={pageTransition}
       className={`${
         isDark ? 'bg-gray-800 text-white' : 'bg-white'
-      } rounded-2xl shadow-lg p-8 text-center`}
+      } rounded-2xl shadow-lg p-8`}
     >
-      <motion.div 
-        whileHover={{ scale: 1.05, rotate: 5 }}
-        className={`${isDark ? 'bg-gray-700' : 'bg-white'} rounded-2xl p-6 inline-block shadow-lg mb-6`}
-      >
-        <img 
-          src="https://showtimeconsulting.in/images/settings/2fd13f50.png" 
-          alt="Showtime Consulting" 
-          className="w-20 h-20 object-contain mx-auto"
-        />
-      </motion.div>
-      
-      <motion.h1 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="text-4xl font-bold mb-2"
-      >
-        <span className="text-purple-600">SHOWTIME</span>
-      </motion.h1>
-      <motion.h2 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className={`text-xl ${isDark ? 'text-gray-400' : 'text-gray-600'} mb-6`}
-      >
-        CONSULTING
-      </motion.h2>
-      
-      <motion.h3 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="text-2xl font-bold mb-4"
-      >
-        Welcome to the
-      </motion.h3>
-      <motion.h4 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-        className="text-2xl font-bold text-purple-600 mb-6"
-      >
-        Daily Work Reporting Portal
-      </motion.h4>
-      
-      <motion.p 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
-        className={`${isDark ? 'text-gray-400' : 'text-gray-600'} max-w-2xl mx-auto leading-relaxed`}
-      >
-        Streamline your daily work reporting with our professional, intuitive 
-        platform designed for efficient team management and progress tracking.
-      </motion.p>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
-        {[
-          { icon: "📝", title: "Daily Reports", desc: "Submit your daily work progress and task updates efficiently", color: "purple" },
-          { icon: "👥", title: "Team Management", desc: "Track team performance and manage reporting workflows", color: "blue" },
-          { icon: "📊", title: "Analytics", desc: "Generate comprehensive reports and export data for analysis", color: "green" }
-        ].map((item, index) => (
-          <motion.div
-            key={index}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 + index * 0.1 }}
-            whileHover={{ scale: 1.05, y: -5 }}
-            className={`bg-${item.color}-50 ${
-              isDark ? `bg-${item.color}-900 bg-opacity-30` : ''
-            } rounded-xl p-6 cursor-pointer`}
-          >
-            <div className="text-3xl mb-4">{item.icon}</div>
-            <h5 className="font-semibold mb-2">{item.title}</h5>
-            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-              {item.desc}
-            </p>
-          </motion.div>
-        ))}
+      <div className="flex items-center justify-between mb-8">
+        <h2 className="text-2xl font-bold">Daily Work Report</h2>
+        <div className="flex items-center space-x-2">
+          <span className={`px-3 py-1 rounded-full text-sm ${
+            user?.role === 'manager' 
+              ? 'bg-purple-100 text-purple-800' 
+              : 'bg-blue-100 text-blue-800'
+          }`}>
+            {user?.role === 'manager' ? '👔 Manager' : '👤 Employee'}
+          </span>
+        </div>
       </div>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div>
+            <label className={`block text-sm font-medium ${
+              isDark ? 'text-gray-300' : 'text-gray-700'
+            } mb-2`}>
+              Department *
+            </label>
+            <select
+              value={selectedDepartment}
+              onChange={(e) => {
+                setSelectedDepartment(e.target.value);
+                setSelectedTeam('');
+                setSelectedManager('');
+              }}
+              className={`w-full px-4 py-3 border ${
+                isDark 
+                  ? 'border-gray-600 bg-gray-700 text-white' 
+                  : 'border-gray-300 bg-white'
+              } rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200`}
+              required
+            >
+              <option value="">Select Department</option>
+              {Object.keys(departments).map(dept => (
+                <option key={dept} value={dept}>{dept}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className={`block text-sm font-medium ${
+              isDark ? 'text-gray-300' : 'text-gray-700'
+            } mb-2`}>
+              Team *
+            </label>
+            <select
+              value={selectedTeam}
+              onChange={(e) => {
+                setSelectedTeam(e.target.value);
+                setSelectedManager('');
+              }}
+              className={`w-full px-4 py-3 border ${
+                isDark 
+                  ? 'border-gray-600 bg-gray-700 text-white' 
+                  : 'border-gray-300 bg-white'
+              } rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200`}
+              required
+              disabled={!selectedDepartment}
+            >
+              <option value="">Select Team</option>
+              {getTeams().map(team => (
+                <option key={team} value={team}>{team}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className={`block text-sm font-medium ${
+              isDark ? 'text-gray-300' : 'text-gray-700'
+            } mb-2`}>
+              Reporting Manager *
+            </label>
+            <select
+              value={selectedManager}
+              onChange={(e) => setSelectedManager(e.target.value)}
+              className={`w-full px-4 py-3 border ${
+                isDark 
+                  ? 'border-gray-600 bg-gray-700 text-white' 
+                  : 'border-gray-300 bg-white'
+              } rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200`}
+              required
+              disabled={!selectedTeam}
+            >
+              <option value="">Select Reporting Manager</option>
+              {getManagers().map(manager => (
+                <option key={manager} value={manager}>{manager}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className={`block text-sm font-medium ${
+              isDark ? 'text-gray-300' : 'text-gray-700'
+            } mb-2`}>
+              Employee Name *
+            </label>
+            <input
+              type="text"
+              value={employeeName}
+              onChange={(e) => setEmployeeName(e.target.value)}
+              className={`w-full px-4 py-3 border ${
+                isDark 
+                  ? 'border-gray-600 bg-gray-700 text-white' 
+                  : 'border-gray-300 bg-white'
+              } rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200`}
+              placeholder="Enter your full name"
+              required
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className={`block text-sm font-medium ${
+            isDark ? 'text-gray-300' : 'text-gray-700'
+          } mb-2`}>
+            Date *
+          </label>
+          <div className="max-w-xs">
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className={`w-full px-4 py-3 border ${
+                isDark 
+                  ? 'border-gray-600 bg-gray-700 text-white' 
+                  : 'border-gray-300 bg-white'
+              } rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200`}
+              required
+            />
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-lg font-semibold mb-4">Tasks & Status</h3>
+          
+          {tasks.map((task, index) => (
+            <motion.div 
+              key={task.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4 p-4 ${
+                isDark ? 'bg-gray-700' : 'bg-gray-50'
+              } rounded-lg`}
+            >
+              <div className="lg:col-span-8">
+                <label className={`block text-sm font-medium ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                } mb-2`}>
+                  Task Details {index + 1} *
+                </label>
+                <textarea
+                  value={task.details}
+                  onChange={(e) => updateTask(task.id, 'details', e.target.value)}
+                  className={`w-full px-4 py-3 border ${
+                    isDark 
+                      ? 'border-gray-600 bg-gray-800 text-white' 
+                      : 'border-gray-300 bg-white'
+                  } rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200`}
+                  placeholder="Enter detailed task description..."
+                  rows="3"
+                  required
+                />
+              </div>
+              
+              <div className="lg:col-span-3">
+                <label className={`block text-sm font-medium ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                } mb-2`}>
+                  Status *
+                </label>
+                <select
+                  value={task.status}
+                  onChange={(e) => updateTask(task.id, 'status', e.target.value)}
+                  className={`w-full px-4 py-3 border ${
+                    isDark 
+                      ? 'border-gray-600 bg-gray-800 text-white' 
+                      : 'border-gray-300 bg-white'
+                  } rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200`}
+                  required
+                >
+                  {statusOptions.map(status => (
+                    <option key={status} value={status}>{status}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="lg:col-span-1 flex items-end">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  type="button"
+                  onClick={() => removeTask(task.id)}
+                  className={`w-full py-3 ${
+                    isDark 
+                      ? 'text-red-400 hover:text-red-300 hover:bg-red-900' 
+                      : 'text-red-600 hover:text-red-700 hover:bg-red-50'
+                  } rounded-lg transition duration-200`}
+                  disabled={tasks.length === 1}
+                >
+                  🗑️
+                </motion.button>
+              </div>
+            </motion.div>
+          ))}
+          
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            type="button"
+            onClick={addTask}
+            className={`w-full py-3 border-2 border-dashed ${
+              isDark 
+                ? 'border-gray-600 text-gray-400 hover:border-purple-500 hover:text-purple-400' 
+                : 'border-gray-300 text-gray-600 hover:border-purple-500 hover:text-purple-600'
+            } rounded-lg transition duration-200`}
+          >
+            ➕ Add New Task
+          </motion.button>
+        </div>
+
+        {message && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`text-center p-3 rounded-lg ${
+              message.includes('successfully') 
+                ? 'bg-green-100 text-green-800' 
+                : 'bg-red-100 text-red-800'
+            }`}
+          >
+            {message}
+          </motion.div>
+        )}
+
+        <div className="flex justify-center">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            type="submit"
+            disabled={loading}
+            className="px-8 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition duration-200 disabled:opacity-50"
+          >
+            {loading ? 'Submitting...' : '📋 Submit Report'}
+          </motion.button>
+        </div>
+      </form>
       <Footer />
     </motion.div>
   );
-};
 
 // Daily Report Component
 const DailyReport = () => {
