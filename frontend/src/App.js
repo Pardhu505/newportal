@@ -675,7 +675,8 @@ const Navigation = ({ activeSection, setActiveSection }) => {
   const sections = [
     { id: 'welcome', label: 'Welcome', icon: '🏠' },
     { id: 'daily-report', label: 'Daily Report', icon: '📝' },
-    { id: 'team-report', label: "RM's Team Report", icon: '👥' },
+    // Only show RM's Team Report for managers
+    ...(user?.role === 'manager' ? [{ id: 'team-report', label: "RM's Team Report", icon: '👥' }] : []),
     { id: 'summary-report', label: 'Summary Report', icon: '📊' }
   ];
 
