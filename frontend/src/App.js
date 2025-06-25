@@ -929,6 +929,12 @@ const DailyReport = () => {
   };
 
   const getManagers = () => {
+    // For managers, they should report to Anant Tiwari or Alimpan Banerjee
+    if (user?.role === 'manager') {
+      return ['Anant Tiwari', 'Alimpan Banerjee'];
+    }
+    
+    // For employees, use the department/team structure
     if (!selectedDepartment || !selectedTeam || !departments || 
         !departments[selectedDepartment] || !departments[selectedDepartment][selectedTeam]) {
       return [];
