@@ -1087,13 +1087,18 @@ const DailyReport = () => {
                   : 'border-gray-300 bg-white'
               } rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200`}
               required
-              disabled={!selectedTeam}
+              disabled={user?.role === 'employee' && !selectedTeam}
             >
               <option value="">Select Reporting Manager</option>
               {getManagers().map(manager => (
                 <option key={manager} value={manager}>{manager}</option>
               ))}
             </select>
+            {user?.role === 'manager' && (
+              <p className="text-xs text-gray-500 mt-1">
+                As a manager, you report to senior leadership
+              </p>
+            )}
           </div>
 
           <div>
