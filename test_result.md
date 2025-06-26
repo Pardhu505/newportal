@@ -262,7 +262,7 @@ frontend:
         agent: "user"
         comment: "User successfully deployed but experiencing issues: worked for 10 minutes initially, then unable to see submitted tasks, unable to select departments, and logins are failing. This suggests database connection timeouts or environment variable issues in production."
 
-  - task: "FastAPI Deprecation Warnings Fix"
+  - task: "Manager Resources API"
     implemented: true
     working: true
     file: "/app/backend/server.py"
@@ -270,15 +270,42 @@ frontend:
     priority: "high"
     needs_retesting: false
     status_history:
-      - working: false
-        agent: "user"
-        comment: "User reported FastAPI deprecation warnings about @app.on_event being deprecated"
-      - working: true
+      - working: "NA"
         agent: "main"
-        comment: "Fixed FastAPI deprecation warnings by implementing the new lifespan event handlers pattern. Removed duplicate @app.on_event handlers and implemented proper lifespan context manager."
+        comment: "Implemented manager resources API endpoint to return resource counts for each manager"
       - working: true
         agent: "testing"
-        comment: "Verified that all backend functionality works correctly after lifespan changes. Authentication, department mapping, and all core endpoints are working properly with no deprecation warnings."
+        comment: "Manager Resources API is working correctly. Successfully tested the /api/manager-resources endpoint which returns the expected data structure with resource counts for each manager. The endpoint returns a JSON object with manager names as keys and resource counts as values."
+
+  - task: "Attendance Summary API"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented attendance summary API endpoint to calculate present/absent counts based on work reports"
+      - working: true
+        agent: "testing"
+        comment: "Attendance Summary API is working correctly. Successfully tested the /api/attendance-summary endpoint which calculates present/absent counts based on work reports. The endpoint returns a JSON object with the date and attendance summary for each manager, including total resources, present count, absent count, and a list of present employees. The calculations are correct, with present + absent = total resources."
+
+  - task: "Delete Work Report API"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented delete work report API endpoint with manager-only access control"
+      - working: true
+        agent: "testing"
+        comment: "Delete Work Report API is working correctly. Successfully tested the DELETE /api/work-reports/{report_id} endpoint which allows managers to delete work reports. The endpoint correctly enforces role-based access control, preventing employees from deleting reports. After deletion, the report is no longer returned by the GET /api/work-reports endpoint."
 
 metadata:
   created_by: "main_agent"
