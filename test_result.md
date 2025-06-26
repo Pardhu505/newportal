@@ -134,6 +134,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "Department/Team Hierarchy API is working correctly. Successfully tested /api/departments endpoint which returns the hierarchical data structure, /api/status-options endpoint, and /api/managers endpoint. All endpoints return the expected data format."
+      - working: true
+        agent: "testing"
+        comment: "Re-tested the departments API endpoint specifically. The /api/departments endpoint works correctly both with and without authentication. The response contains the expected department data structure with all departments, teams, and managers properly defined. The DEPARTMENT_DATA constant is correctly defined in the backend code and is properly returned by the API. The issue with department team mapping not reflecting in the Vercel deployment is likely a frontend issue, as the backend API is working correctly."
 
   - task: "Work Report CRUD Operations"
     implemented: true
