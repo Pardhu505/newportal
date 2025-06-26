@@ -1866,14 +1866,24 @@ const TeamReport = () => {
                           </motion.button>
                         </div>
                       ) : (
-                        <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => startEditing(report)}
-                          className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-all duration-200"
-                        >
-                          ✏️ Edit
-                        </motion.button>
+                        <div className="flex gap-2">
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => startEditing(report)}
+                            className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-all duration-200"
+                          >
+                            ✏️ Edit
+                          </motion.button>
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => deleteReport(report.id)}
+                            className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-all duration-200"
+                          >
+                            🗑️ Delete
+                          </motion.button>
+                        </div>
                       )}
                     </td>
                   )}
