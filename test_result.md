@@ -259,6 +259,24 @@ frontend:
         agent: "user"
         comment: "Department team mapping not working in Vercel deployment. Frontend likely not connecting to backend properly in production environment."
 
+  - task: "FastAPI Deprecation Warnings Fix"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "User reported FastAPI deprecation warnings about @app.on_event being deprecated"
+      - working: true
+        agent: "main"
+        comment: "Fixed FastAPI deprecation warnings by implementing the new lifespan event handlers pattern. Removed duplicate @app.on_event handlers and implemented proper lifespan context manager."
+      - working: true
+        agent: "testing"
+        comment: "Verified that all backend functionality works correctly after lifespan changes. Authentication, department mapping, and all core endpoints are working properly with no deprecation warnings."
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
