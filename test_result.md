@@ -317,7 +317,10 @@ test_plan:
   current_focus:
     - "Vercel Deployment Configuration"
     - "Daily Work Report Form"
-    - "Department/Team Hierarchy API"
+    - "Authentication UI"
+    - "Navigation and Welcome Page"
+    - "RM's Team Report View"
+    - "Summary Report with Statistics"
   stuck_tasks:
     - "Vercel Deployment Configuration"
   test_all: false
