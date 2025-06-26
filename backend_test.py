@@ -376,6 +376,132 @@ class DailyWorkReportingPortalTest(unittest.TestCase):
         else:
             print("No reports found to check timestamps")
 
+    def test_19_get_manager_resources(self):
+        """Test getting manager resources"""
+        response = requests.get(f"{API_URL}/manager-resources")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn("manager_resources", data)
+        manager_resources = data["manager_resources"]
+        
+        # Check if the structure matches expected format
+        self.assertIsInstance(manager_resources, dict)
+        
+        # Check if some expected managers are in the resources
+        self.assertIn("Atia", manager_resources)
+        self.assertIn("Tejaswini", manager_resources)
+        
+        # Check if resource counts are integers
+        for manager, count in manager_resources.items():
+            self.assertIsInstance(count, int)
+        
+        print("✅ Manager resources endpoint working correctly")
+    
+    def test_20_get_attendance_summary(self):
+        """Test getting attendance summary"""
+        headers = {"Authorization": f"Bearer {self.manager_token}"}
+        
+        # Get today's date
+        today = datetime.now().strftime("%Y-%m-%d")
+        
+        response = requests.get(
+            f"{API_URL}/attendance-summary?date={today}",
+            headers=headers
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        
+        # Check structure
+        self.assertIn("date", data)
+        self.assertIn("attendance_summary", data)
+        self.assertEqual(data["date"], today)
+        
+        # Check attendance summary structure
+        attendance_summary = data["attendance_summary"]
+        self.assertIsInstance(attendance_summary, dict)
+        
+        # Check if at least one manager has attendance data
+        if attendance_summary:
+            for manager, stats in attendance_summary.items():
+                self.assertIn("total_resources", stats)
+                self.assertIn("present", stats)
+                self.assertIn("absent", stats)
+                self.assertIn("present_employees", stats)
+                
+                # Verify that present + absent = total_resources
+                self.assertEqual(stats["present"] + stats["absent"], stats["total_resources"])
+                
+                # Verify that present count matches length of present_employees list
+                self.assertEqual(stats["present"], len(stats["present_employees"]))
+        
+        print("✅ Attendance summary endpoint working correctly")
+    
+    def test_21_delete_work_report_as_employee(self):
+        """Test deleting a work report as an employee (should fail)"""
+        if not self.__class__.report_id:
+            self.skipTest("No report ID available for delete test")
+        
+        headers = {"Authorization": f"Bearer {self.employee_token}"}
+        
+        # Try to delete the report as an employee
+        response = requests.delete(
+            f"{API_URL}/work-reports/{self.__class__.report_id}",
+            headers=headers
+        )
+        self.assertEqual(response.status_code, 403)  # Should be forbidden
+        print("✅ Employee correctly prevented from deleting reports")
+    
+    def test_22_delete_work_report_as_manager(self):
+        """Test deleting a work report as a manager"""
+        if not self.__class__.report_id:
+            self.skipTest("No report ID available for delete test")
+        
+        headers = {"Authorization": f"Bearer {self.manager_token}"}
+        
+        # Delete the report as a manager
+        response = requests.delete(
+            f"{API_URL}/work-reports/{self.__class__.report_id}",
+            headers=headers
+        )
+        self.assertEqual(response.status_code, 200)
+        
+        # Verify the report is deleted
+        response = requests.get(
+            f"{API_URL}/work-reports",
+            headers=headers
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        
+        # Check that the deleted report is not in the list
+        report_ids = [report["id"] for report in data["reports"]]
+        self.assertNotIn(self.__class__.report_id, report_ids)
+        
+        print("✅ Manager can delete work reports")
+    
+    def test_23_verify_existing_functionality(self):
+        """Verify that all existing functionality remains intact"""
+        # Test health check endpoint
+        response = requests.get(f"{API_URL}/health")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["status"], "healthy")
+        
+        # Test departments endpoint
+        response = requests.get(f"{API_URL}/departments")
+        self.assertEqual(response.status_code, 200)
+        
+        # Test status options endpoint
+        response = requests.get(f"{API_URL}/status-options")
+        self.assertEqual(response.status_code, 200)
+        
+        # Test managers endpoint with authentication
+        headers = {"Authorization": f"Bearer {self.manager_token}"}
+        response = requests.get(f"{API_URL}/managers", headers=headers)
+        self.assertEqual(response.status_code, 200)
+        
+        print("✅ All existing functionality remains intact")
+
 if __name__ == "__main__":
     print(f"Testing backend API at: {API_URL}")
     # Create a test suite with all tests
