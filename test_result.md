@@ -261,3 +261,5 @@ agent_communication:
     message: "Initial implementation completed. Need to test all backend endpoints including auth, department hierarchy, work report CRUD, and CSV export. Frontend components are ready but need backend validation first."
   - agent: "testing"
     message: "Completed comprehensive testing of all backend components. Fixed an issue with MongoDB ObjectId serialization that was causing 500 errors in the work reports endpoints. All backend APIs are now working correctly. Authentication, department hierarchy, work report CRUD operations, CSV export, and IST timezone implementation are all functioning as expected. The backend is ready for frontend integration."
+  - agent: "main"
+    message: "User reported that department team mapping is not reflecting on the portal when deployed on Vercel. This is likely due to frontend-backend connectivity issues in production environment. Need to investigate and fix the deployment configuration issue."
