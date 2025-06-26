@@ -63,7 +63,7 @@ db_connection = DatabaseConnection()
 client = db_connection.get_client()
 db = db_connection.get_database()
 
-# Department and team data
+# Department and team data with resource counts
 DEPARTMENT_DATA = {
     "Soul Centre": {
         "Soul Central": ["Atia"],
@@ -99,6 +99,28 @@ DEPARTMENT_DATA = {
     "Admin": {
         "Operations": ["Nikash"]
     }
+}
+
+# Manager resource counts (from user's table)
+MANAGER_RESOURCES = {
+    "Atia": 4,
+    "Akhilesh Mishra": 12,
+    "Siddharth Gautam": 8,
+    "Sai Kiran Gurram": 3,
+    "Himani Sehgal": 6,
+    "Pawan Beniwal": 3,
+    "Aditya Pandit": 3,
+    "Sravya": 1,
+    "Eshwar": 1,
+    "S S Manoharan": 4,
+    "T. Pardhasaradhi": 5,
+    "Aakanksha Tandon": 6,
+    "P. Srinath Rao": 2,
+    "Madhunisha and Apoorva": 1,
+    "Keerthana": 7,
+    "Bapan": 15,
+    "Tejaswini": 4,
+    "Nikash": 4
 }
 
 STATUS_OPTIONS = ["WIP", "Completed", "Yet to Start", "Delayed"]
@@ -467,6 +489,17 @@ async def get_departments():
             detail="Departments service temporarily unavailable"
         )
 
+@api_router.get("/manager-resources")
+async def get_manager_resources():
+    try:
+        return {"manager_resources": MANAGER_RESOURCES}
+    except Exception as e:
+        logging.error(f"Manager resources error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Manager resources service temporarily unavailable"
+        )
+
 @api_router.get("/status-options")
 async def get_status_options():
     try:
@@ -550,6 +583,56 @@ async def get_work_reports(
             detail="Work reports service temporarily unavailable"
         )
 
+@api_router.get("/attendance-summary")
+async def get_attendance_summary(
+    current_user: UserResponse = Depends(get_current_user),
+    date: Optional[str] = None
+):
+    """Get attendance summary for managers on a specific date"""
+    try:
+        if not date:
+            # Default to today
+            date = datetime.now(IST).strftime("%Y-%m-%d")
+        
+        # Get all reports for the specified date
+        reports = await db.work_reports.find({"date": date}).to_list(1000)
+        
+        # Group reports by manager
+        manager_attendance = {}
+        
+        for report in reports:
+            manager = report["reporting_manager"]
+            if manager not in manager_attendance:
+                manager_attendance[manager] = {
+                    "present": [],
+                    "total_resources": MANAGER_RESOURCES.get(manager, 0)
+                }
+            manager_attendance[manager]["present"].append(report["employee_name"])
+        
+        # Calculate absent employees for each manager
+        attendance_summary = {}
+        for manager, resources in MANAGER_RESOURCES.items():
+            present_count = len(manager_attendance.get(manager, {}).get("present", []))
+            absent_count = resources - present_count
+            
+            attendance_summary[manager] = {
+                "total_resources": resources,
+                "present": present_count,
+                "absent": absent_count,
+                "present_employees": manager_attendance.get(manager, {}).get("present", [])
+            }
+        
+        return {
+            "date": date,
+            "attendance_summary": attendance_summary
+        }
+    except Exception as e:
+        logging.error(f"Attendance summary error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Attendance summary service temporarily unavailable"
+        )
+
 @api_router.put("/work-reports/{report_id}")
 async def update_work_report(
     report_id: str,
@@ -592,6 +675,40 @@ async def update_work_report(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Work report update service temporarily unavailable"
+        )
+
+@api_router.delete("/work-reports/{report_id}")
+async def delete_work_report(
+    report_id: str,
+    current_user: UserResponse = Depends(get_current_user)
+):
+    try:
+        # Check if user is manager
+        if current_user.role != "manager":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only managers can delete reports"
+            )
+        
+        # Find the report
+        report = await db.work_reports.find_one({"id": report_id})
+        if not report:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Report not found"
+            )
+        
+        # Delete the report
+        await db.work_reports.delete_one({"id": report_id})
+        
+        return {"message": "Report deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Delete work report error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Work report delete service temporarily unavailable"
         )
 
 @api_router.get("/work-reports/export/csv")
