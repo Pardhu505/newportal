@@ -207,15 +207,18 @@ frontend:
 
   - task: "Daily Work Report Form"
     implemented: true
-    working: "NA"
+    working: false
     file: "/app/frontend/src/App.js"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Implemented cascading dropdowns for department/team/manager selection with dynamic task addition"
+      - working: false
+        agent: "user"
+        comment: "User reported that department team mapping is not reflecting on the portal when deployed on Vercel. The issue appears to be related to frontend-backend connectivity in production environment."
 
   - task: "RM's Team Report View"
     implemented: true
