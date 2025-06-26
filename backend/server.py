@@ -17,6 +17,7 @@ from passlib.context import CryptContext
 from io import StringIO
 from fastapi.responses import StreamingResponse
 from mangum import Mangum
+from contextlib import asynccontextmanager
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
