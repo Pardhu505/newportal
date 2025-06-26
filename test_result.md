@@ -251,13 +251,16 @@ frontend:
     implemented: true
     working: false
     file: "/app/frontend/.env"
-    stuck_count: 1
+    stuck_count: 2
     priority: "high"
     needs_retesting: true
     status_history:
       - working: false
         agent: "user"
         comment: "Department team mapping not working in Vercel deployment. Frontend likely not connecting to backend properly in production environment."
+      - working: false
+        agent: "user"
+        comment: "User successfully deployed but experiencing issues: worked for 10 minutes initially, then unable to see submitted tasks, unable to select departments, and logins are failing. This suggests database connection timeouts or environment variable issues in production."
 
   - task: "FastAPI Deprecation Warnings Fix"
     implemented: true
