@@ -22,82 +22,46 @@ from contextlib import asynccontextmanager
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
+# MongoDB connection with optimized settings for Vercel serverless
 mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ.get('DB_NAME', 'showtime_portal')]
 
-# Initialize database with predefined users
-async def init_database():
-    # Check if users already exist
-    user_count = await db.users.count_documents({})
-    if user_count == 0:
-        # Insert predefined users
-        users_to_insert = []
-        for user_data in PREDEFINED_USERS:
-            user = User(
-                name=user_data["name"],
-                email=user_data["email"],
-                password_hash=hash_password(user_data["password"]),
-                role=user_data["role"],
-                department=user_data.get("department", ""),
-                team=user_data.get("team", "")
+# Singleton pattern for database connection (2025 best practice)
+class DatabaseConnection:
+    _instance = None
+    _client = None
+    _db = None
+    
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(DatabaseConnection, cls).__new__(cls)
+        return cls._instance
+    
+    def get_client(self):
+        if self._client is None:
+            # Optimized connection settings for serverless (2025 best practices)
+            self._client = AsyncIOMotorClient(
+                mongo_url,
+                maxPoolSize=10,  # Optimize for serverless
+                minPoolSize=1,   # Keep minimum connections
+                serverSelectionTimeoutMS=5000,  # Fast timeout
+                connectTimeoutMS=10000,  # Connection timeout
+                socketTimeoutMS=30000,   # Socket timeout
+                maxIdleTimeMS=45000,     # Close idle connections
+                retryWrites=True,        # Retry failed writes
+                w='majority'             # Write concern
             )
-            users_to_insert.append(user.dict())
-        
-        await db.users.insert_many(users_to_insert)
-        print("Database initialized with predefined users")
-    else:
-        # Update existing users with department and team data where missing
-        for user_data in PREDEFINED_USERS:
-            existing_user = await db.users.find_one({"email": user_data["email"]})
-            if existing_user and not existing_user.get("department"):
-                await db.users.update_one(
-                    {"email": user_data["email"]},
-                    {"$set": {
-                        "department": user_data.get("department", ""),
-                        "team": user_data.get("team", "")
-                    }}
-                )
-                print(f"Updated {user_data['name']} with department and team data")
+        return self._client
+    
+    def get_database(self):
+        if self._db is None:
+            client = self.get_client()
+            self._db = client[os.environ.get('DB_NAME', 'showtime_portal')]
+        return self._db
 
-# Lifespan event handler
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup
-    await init_database()
-    yield
-    # Shutdown
-    client.close()
-
-# Create the main app with lifespan
-app = FastAPI(
-    title="Daily Work Reporting Portal API", 
-    version="1.0.0",
-    lifespan=lifespan)
-
-# Create a router with the /api prefix
-api_router = APIRouter(prefix="/api")
-
-# Security
-security = HTTPBearer()
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-SECRET_KEY = os.environ.get("SECRET_KEY", "your-secret-key-here")
-ALGORITHM = "HS256"
-
-# IST timezone
-IST = pytz.timezone('Asia/Kolkata')
-
-# CORS configuration
-CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "*").split(",")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=CORS_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Initialize database connection
+db_connection = DatabaseConnection()
+client = db_connection.get_client()
+db = db_connection.get_database()
 
 # Department and team data
 DEPARTMENT_DATA = {
@@ -202,7 +166,7 @@ class User(BaseModel):
     role: str  # "manager" or "employee"
     department: str = ""
     team: str = ""
-    created_at: datetime = Field(default_factory=lambda: datetime.now(IST))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(pytz.timezone('Asia/Kolkata')))
 
 class UserLogin(BaseModel):
     email: str
@@ -238,8 +202,8 @@ class WorkReport(BaseModel):
     reporting_manager: str
     date: str
     tasks: List[Task]
-    submitted_at: datetime = Field(default_factory=lambda: datetime.now(IST))
-    last_modified_at: datetime = Field(default_factory=lambda: datetime.now(IST))
+    submitted_at: datetime = Field(default_factory=lambda: datetime.now(pytz.timezone('Asia/Kolkata')))
+    last_modified_at: datetime = Field(default_factory=lambda: datetime.now(pytz.timezone('Asia/Kolkata')))
     last_modified_by: str = ""
 
 class WorkReportCreate(BaseModel):
@@ -252,6 +216,15 @@ class WorkReportCreate(BaseModel):
 
 class WorkReportUpdate(BaseModel):
     tasks: List[Task]
+
+# Security setup
+security = HTTPBearer()
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+SECRET_KEY = os.environ.get("SECRET_KEY", "your-secret-key-here")
+ALGORITHM = "HS256"
+
+# IST timezone
+IST = pytz.timezone('Asia/Kolkata')
 
 # Helper functions
 def hash_password(password: str) -> str:
@@ -293,104 +266,191 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    user = await db.users.find_one({"email": payload.get("sub")})
-    if user is None:
+    try:
+        user = await db.users.find_one({"email": payload.get("sub")})
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        # Convert MongoDB document to dict with proper ObjectId handling
+        user_dict = convert_mongo_doc(user)
+        return UserResponse(**user_dict)
+    except Exception as e:
+        logging.error(f"Error getting current user: {str(e)}")
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-            headers={"WWW-Authenticate": "Bearer"},
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Authentication service temporarily unavailable"
         )
-    
-    # Convert MongoDB document to dict with proper ObjectId handling
-    user_dict = convert_mongo_doc(user)
-    return UserResponse(**user_dict)
 
 # Initialize database with predefined users
 async def init_database():
-    # Check if users already exist
-    user_count = await db.users.count_documents({})
-    if user_count == 0:
-        # Insert predefined users
-        users_to_insert = []
-        for user_data in PREDEFINED_USERS:
-            user = User(
-                name=user_data["name"],
-                email=user_data["email"],
-                password_hash=hash_password(user_data["password"]),
-                role=user_data["role"],
-                department=user_data.get("department", ""),
-                team=user_data.get("team", "")
-            )
-            users_to_insert.append(user.dict())
-        
-        await db.users.insert_many(users_to_insert)
-        print("Database initialized with predefined users")
-    else:
-        # Update existing users with department and team data where missing
-        for user_data in PREDEFINED_USERS:
-            existing_user = await db.users.find_one({"email": user_data["email"]})
-            if existing_user and not existing_user.get("department"):
-                await db.users.update_one(
-                    {"email": user_data["email"]},
-                    {"$set": {
-                        "department": user_data.get("department", ""),
-                        "team": user_data.get("team", "")
-                    }}
+    try:
+        # Check if users already exist
+        user_count = await db.users.count_documents({})
+        if user_count == 0:
+            # Insert predefined users
+            users_to_insert = []
+            for user_data in PREDEFINED_USERS:
+                user = User(
+                    name=user_data["name"],
+                    email=user_data["email"],
+                    password_hash=hash_password(user_data["password"]),
+                    role=user_data["role"],
+                    department=user_data.get("department", ""),
+                    team=user_data.get("team", "")
                 )
-                print(f"Updated {user_data['name']} with department and team data")
+                users_to_insert.append(user.dict())
+            
+            await db.users.insert_many(users_to_insert)
+            print("Database initialized with predefined users")
+        else:
+            # Update existing users with department and team data where missing
+            for user_data in PREDEFINED_USERS:
+                existing_user = await db.users.find_one({"email": user_data["email"]})
+                if existing_user and not existing_user.get("department"):
+                    await db.users.update_one(
+                        {"email": user_data["email"]},
+                        {"$set": {
+                            "department": user_data.get("department", ""),
+                            "team": user_data.get("team", "")
+                        }}
+                    )
+                    print(f"Updated {user_data['name']} with department and team data")
+    except Exception as e:
+        print(f"Database initialization error: {str(e)}")
 
-@app.on_event("startup")
-async def startup_event():
-    await init_database()
+# Lifespan event handler
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    try:
+        await init_database()
+        print("Application started successfully")
+    except Exception as e:
+        print(f"Startup error: {str(e)}")
+    yield
+    # Shutdown
+    try:
+        client.close()
+        print("Database connection closed")
+    except Exception as e:
+        print(f"Shutdown error: {str(e)}")
+
+# Create the main app with lifespan
+app = FastAPI(
+    title="Daily Work Reporting Portal API", 
+    version="1.0.0",
+    lifespan=lifespan
+)
+
+# Create a router with the /api prefix
+api_router = APIRouter(prefix="/api")
+
+# CORS configuration
+CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "*").split(",")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Health check endpoint
+@api_router.get("/health")
+async def health_check():
+    try:
+        # Test database connection
+        count = await db.users.count_documents({})
+        return {
+            "status": "healthy", 
+            "database": "connected",
+            "users_count": count,
+            "departments_available": len(DEPARTMENT_DATA)
+        }
+    except Exception as e:
+        return {
+            "status": "unhealthy", 
+            "error": str(e),
+            "database": "disconnected"
+        }
 
 # Routes
 @api_router.post("/auth/login")
 async def login(user_data: UserLogin):
-    user = await db.users.find_one({"email": user_data.email})
-    if not user or not verify_password(user_data.password, user["password_hash"]):
+    try:
+        user = await db.users.find_one({"email": user_data.email})
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found"
+            )
+        
+        if not verify_password(user_data.password, user["password_hash"]):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect password"
+            )
+        
+        # Convert MongoDB document to dict with proper ObjectId handling
+        user_dict = convert_mongo_doc(user)
+        
+        access_token = create_access_token(data={"sub": user["email"]})
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": UserResponse(**user_dict)
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Login error: {str(e)}")
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Login service temporarily unavailable"
         )
-    
-    # Convert MongoDB document to dict with proper ObjectId handling
-    user_dict = convert_mongo_doc(user)
-    
-    access_token = create_access_token(data={"sub": user["email"]})
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": UserResponse(**user_dict)
-    }
 
 @api_router.post("/auth/signup")
 async def signup(user_data: UserCreate):
-    # Check if user already exists
-    existing_user = await db.users.find_one({"email": user_data.email})
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
+    try:
+        # Check if user already exists
+        existing_user = await db.users.find_one({"email": user_data.email})
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already registered"
+            )
+        
+        # Create new user with provided role or default to employee
+        user = User(
+            name=user_data.name,
+            email=user_data.email,
+            password_hash=hash_password(user_data.password),
+            role=user_data.role,
+            department=user_data.department,
+            team=user_data.team
         )
-    
-    # Create new user with provided role or default to employee
-    user = User(
-        name=user_data.name,
-        email=user_data.email,
-        password_hash=hash_password(user_data.password),
-        role=user_data.role,
-        department=user_data.department,
-        team=user_data.team
-    )
-    
-    await db.users.insert_one(user.dict())
-    
-    access_token = create_access_token(data={"sub": user.email})
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": UserResponse(**user.dict())
-    }
+        
+        await db.users.insert_one(user.dict())
+        
+        access_token = create_access_token(data={"sub": user.email})
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": UserResponse(**user.dict())
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Signup error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Signup service temporarily unavailable"
+        )
 
 @api_router.get("/auth/me")
 async def get_current_user_info(current_user: UserResponse = Depends(get_current_user)):
@@ -398,29 +458,50 @@ async def get_current_user_info(current_user: UserResponse = Depends(get_current
 
 @api_router.get("/departments")
 async def get_departments():
-    return {"departments": DEPARTMENT_DATA}
+    try:
+        return {"departments": DEPARTMENT_DATA}
+    except Exception as e:
+        logging.error(f"Departments error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Departments service temporarily unavailable"
+        )
 
 @api_router.get("/status-options")
 async def get_status_options():
-    return {"status_options": STATUS_OPTIONS}
+    try:
+        return {"status_options": STATUS_OPTIONS}
+    except Exception as e:
+        logging.error(f"Status options error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Status options service temporarily unavailable"
+        )
 
 @api_router.post("/work-reports")
 async def create_work_report(
     report_data: WorkReportCreate,
     current_user: UserResponse = Depends(get_current_user)
 ):
-    report = WorkReport(
-        employee_name=report_data.employee_name,
-        employee_email=current_user.email,
-        department=report_data.department,
-        team=report_data.team,
-        reporting_manager=report_data.reporting_manager,
-        date=report_data.date,
-        tasks=report_data.tasks
-    )
-    
-    await db.work_reports.insert_one(report.dict())
-    return {"message": "Work report submitted successfully", "report_id": report.id}
+    try:
+        report = WorkReport(
+            employee_name=report_data.employee_name,
+            employee_email=current_user.email,
+            department=report_data.department,
+            team=report_data.team,
+            reporting_manager=report_data.reporting_manager,
+            date=report_data.date,
+            tasks=report_data.tasks
+        )
+        
+        await db.work_reports.insert_one(report.dict())
+        return {"message": "Work report submitted successfully", "report_id": report.id}
+    except Exception as e:
+        logging.error(f"Create work report error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Work report service temporarily unavailable"
+        )
 
 @api_router.get("/work-reports")
 async def get_work_reports(
@@ -431,36 +512,43 @@ async def get_work_reports(
     from_date: Optional[str] = None,
     to_date: Optional[str] = None
 ):
-    # Build query
-    query = {}
-    
-    # If user is employee, only show their reports
-    if current_user.role == "employee":
-        query["employee_email"] = current_user.email
-    
-    # Apply filters
-    if department and department != "All Departments":
-        query["department"] = department
-    if team and team != "All Teams":
-        query["team"] = team
-    if manager and manager != "All Reporting Managers":
-        query["reporting_manager"] = manager
-    
-    # Date filtering
-    if from_date and to_date:
-        query["date"] = {"$gte": from_date, "$lte": to_date}
-    elif from_date:
-        query["date"] = {"$gte": from_date}
-    elif to_date:
-        query["date"] = {"$lte": to_date}
-    
-    cursor = db.work_reports.find(query).sort("submitted_at", -1)
-    reports = await cursor.to_list(1000)
-    
-    # Convert MongoDB documents to dict with proper ObjectId handling
-    reports_list = [convert_mongo_doc(report) for report in reports]
-    
-    return {"reports": reports_list}
+    try:
+        # Build query
+        query = {}
+        
+        # If user is employee, only show their reports
+        if current_user.role == "employee":
+            query["employee_email"] = current_user.email
+        
+        # Apply filters
+        if department and department != "All Departments":
+            query["department"] = department
+        if team and team != "All Teams":
+            query["team"] = team
+        if manager and manager != "All Reporting Managers":
+            query["reporting_manager"] = manager
+        
+        # Date filtering
+        if from_date and to_date:
+            query["date"] = {"$gte": from_date, "$lte": to_date}
+        elif from_date:
+            query["date"] = {"$gte": from_date}
+        elif to_date:
+            query["date"] = {"$lte": to_date}
+        
+        cursor = db.work_reports.find(query).sort("submitted_at", -1)
+        reports = await cursor.to_list(1000)
+        
+        # Convert MongoDB documents to dict with proper ObjectId handling
+        reports_list = [convert_mongo_doc(report) for report in reports]
+        
+        return {"reports": reports_list}
+    except Exception as e:
+        logging.error(f"Get work reports error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Work reports service temporarily unavailable"
+        )
 
 @api_router.put("/work-reports/{report_id}")
 async def update_work_report(
@@ -468,34 +556,43 @@ async def update_work_report(
     report_data: WorkReportUpdate,
     current_user: UserResponse = Depends(get_current_user)
 ):
-    # Check if user is manager
-    if current_user.role != "manager":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only managers can edit reports"
+    try:
+        # Check if user is manager
+        if current_user.role != "manager":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only managers can edit reports"
+            )
+        
+        # Find the report
+        report = await db.work_reports.find_one({"id": report_id})
+        if not report:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Report not found"
+            )
+        
+        # Update the report
+        update_data = {
+            "tasks": [task.dict() for task in report_data.tasks],
+            "last_modified_at": datetime.now(IST),
+            "last_modified_by": current_user.email
+        }
+        
+        await db.work_reports.update_one(
+            {"id": report_id},
+            {"$set": update_data}
         )
-    
-    # Find the report
-    report = await db.work_reports.find_one({"id": report_id})
-    if not report:
+        
+        return {"message": "Report updated successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Update work report error: {str(e)}")
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Report not found"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Work report update service temporarily unavailable"
         )
-    
-    # Update the report
-    update_data = {
-        "tasks": [task.dict() for task in report_data.tasks],
-        "last_modified_at": datetime.now(IST),
-        "last_modified_by": current_user.email
-    }
-    
-    await db.work_reports.update_one(
-        {"id": report_id},
-        {"$set": update_data}
-    )
-    
-    return {"message": "Report updated successfully"}
 
 @api_router.get("/work-reports/export/csv")
 async def export_csv(
@@ -506,55 +603,69 @@ async def export_csv(
     from_date: Optional[str] = None,
     to_date: Optional[str] = None
 ):
-    # Build query (same as get_work_reports)
-    query = {}
-    
-    if current_user.role == "employee":
-        query["employee_email"] = current_user.email
-    
-    if department and department != "All Departments":
-        query["department"] = department
-    if team and team != "All Teams":
-        query["team"] = team
-    if manager and manager != "All Reporting Managers":
-        query["reporting_manager"] = manager
-    
-    if from_date and to_date:
-        query["date"] = {"$gte": from_date, "$lte": to_date}
-    elif from_date:
-        query["date"] = {"$gte": from_date}
-    elif to_date:
-        query["date"] = {"$lte": to_date}
-    
-    reports = await db.work_reports.find(query).sort("submitted_at", -1).to_list(1000)
-    
-    # Create CSV without pandas - lightweight approach
-    csv_lines = []
-    csv_lines.append("Date,Employee Name,Department,Team,Reporting Manager,Task Details,Status,Submitted At")
-    
-    for report in reports:
-        for task in report["tasks"]:
-            details = task["details"].replace('"', '""')
-            csv_line = f'"{report["date"]}","{report["employee_name"]}","{report["department"]}","{report["team"]}","{report["reporting_manager"]}","{details}","{task["status"]}","{report["submitted_at"].strftime("%Y-%m-%d %H:%M:%S IST")}"'
-            csv_lines.append(csv_line)
-    
-    csv_content = "\n".join(csv_lines)
-    
-    return StreamingResponse(
-        iter([csv_content]),
-        media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=work_reports.csv"}
-    )
+    try:
+        # Build query (same as get_work_reports)
+        query = {}
+        
+        if current_user.role == "employee":
+            query["employee_email"] = current_user.email
+        
+        if department and department != "All Departments":
+            query["department"] = department
+        if team and team != "All Teams":
+            query["team"] = team
+        if manager and manager != "All Reporting Managers":
+            query["reporting_manager"] = manager
+        
+        if from_date and to_date:
+            query["date"] = {"$gte": from_date, "$lte": to_date}
+        elif from_date:
+            query["date"] = {"$gte": from_date}
+        elif to_date:
+            query["date"] = {"$lte": to_date}
+        
+        reports = await db.work_reports.find(query).sort("submitted_at", -1).to_list(1000)
+        
+        # Create CSV without pandas - lightweight approach
+        csv_lines = []
+        csv_lines.append("Date,Employee Name,Department,Team,Reporting Manager,Task Details,Status,Submitted At")
+        
+        for report in reports:
+            for task in report["tasks"]:
+                details = task["details"].replace('"', '""')
+                csv_line = f'"{report["date"]}","{report["employee_name"]}","{report["department"]}","{report["team"]}","{report["reporting_manager"]}","{details}","{task["status"]}","{report["submitted_at"].strftime("%Y-%m-%d %H:%M:%S IST")}"'
+                csv_lines.append(csv_line)
+        
+        csv_content = "\n".join(csv_lines)
+        
+        return StreamingResponse(
+            iter([csv_content]),
+            media_type="text/csv",
+            headers={"Content-Disposition": "attachment; filename=work_reports.csv"}
+        )
+    except Exception as e:
+        logging.error(f"CSV export error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="CSV export service temporarily unavailable"
+        )
 
 @api_router.get("/managers")
 async def get_managers():
-    cursor = db.users.find({"role": "manager"})
-    managers = await cursor.to_list(1000)
-    
-    # Convert MongoDB documents to dict with proper ObjectId handling
-    managers_list = [convert_mongo_doc(manager) for manager in managers]
-    
-    return {"managers": [{"name": manager["name"], "email": manager["email"]} for manager in managers_list]}
+    try:
+        cursor = db.users.find({"role": "manager"})
+        managers = await cursor.to_list(1000)
+        
+        # Convert MongoDB documents to dict with proper ObjectId handling
+        managers_list = [convert_mongo_doc(manager) for manager in managers]
+        
+        return {"managers": [{"name": manager["name"], "email": manager["email"]} for manager in managers_list]}
+    except Exception as e:
+        logging.error(f"Get managers error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Managers service temporarily unavailable"
+        )
 
 # Include the router in the main app
 app.include_router(api_router)
