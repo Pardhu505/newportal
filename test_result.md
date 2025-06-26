@@ -244,6 +244,18 @@ frontend:
         agent: "main"
         comment: "Implemented summary view with task statistics and date filtering"
 
+  - task: "Vercel Deployment Configuration"
+    implemented: true
+    working: false
+    file: "/app/frontend/.env"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "Department team mapping not working in Vercel deployment. Frontend likely not connecting to backend properly in production environment."
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
