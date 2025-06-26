@@ -264,12 +264,13 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Authentication System"
+    - "Vercel Deployment Configuration"
+    - "Daily Work Report Form"
     - "Department/Team Hierarchy API"
-    - "Work Report CRUD Operations"
-  stuck_tasks: []
-  test_all: true
-  test_priority: "high_first"
+  stuck_tasks:
+    - "Vercel Deployment Configuration"
+  test_all: false
+  test_priority: "stuck_first"
 
 agent_communication:
   - agent: "main"
