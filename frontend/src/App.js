@@ -1269,6 +1269,8 @@ const TeamReport = () => {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(false);
   const [departments, setDepartments] = useState({});
+  const [managerResources, setManagerResources] = useState({});
+  const [attendanceSummary, setAttendanceSummary] = useState({});
   const [filters, setFilters] = useState({
     department: '',
     team: '',
@@ -1282,6 +1284,7 @@ const TeamReport = () => {
     fetchReports();
     fetchDepartments();
     fetchStatusOptions();
+    fetchManagerResources();
   }, [filters]);
 
   const fetchDepartments = async () => {
@@ -1292,6 +1295,28 @@ const TeamReport = () => {
       setDepartments(response.data.departments);
     } catch (error) {
       console.error('Error fetching departments:', error);
+    }
+  };
+
+  const fetchManagerResources = async () => {
+    try {
+      const response = await axios.get(`${API}/manager-resources`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setManagerResources(response.data.manager_resources);
+    } catch (error) {
+      console.error('Error fetching manager resources:', error);
+    }
+  };
+
+  const fetchAttendanceSummary = async (date) => {
+    try {
+      const response = await axios.get(`${API}/attendance-summary?date=${date}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAttendanceSummary(response.data.attendance_summary);
+    } catch (error) {
+      console.error('Error fetching attendance summary:', error);
     }
   };
 
@@ -1343,6 +1368,20 @@ const TeamReport = () => {
     }
   };
 
+  const deleteReport = async (reportId) => {
+    if (window.confirm('Are you sure you want to delete this report? This action cannot be undone.')) {
+      try {
+        await axios.delete(`${API}/work-reports/${reportId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        fetchReports();
+        alert('Report deleted successfully');
+      } catch (error) {
+        alert('Error deleting report. Please try again.');
+      }
+    }
+  };
+
   const exportCSV = async () => {
     try {
       const params = new URLSearchParams();
@@ -1367,13 +1406,17 @@ const TeamReport = () => {
     }
   };
 
-  const exportPDF = () => {
+  const exportPDF = async () => {
+    // Get today's date for attendance summary
+    const today = new Date().toISOString().split('T')[0];
+    await fetchAttendanceSummary(today);
+
     const doc = new jsPDF();
     
     // Title and Header
     doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
-    doc.text('Team Work Report', 14, 20);
+    doc.text('Team Work Report with Attendance Summary', 14, 20);
     
     // Company Logo placeholder
     doc.setFontSize(12);
@@ -1383,6 +1426,55 @@ const TeamReport = () => {
     // Date and time
     doc.setFontSize(10);
     doc.text(`Generated on: ${new Date().toLocaleDateString('en-IN')} at ${new Date().toLocaleTimeString('en-IN')}`, 14, 40);
+    
+    let currentY = 50;
+
+    // Add Attendance Summary Section
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Attendance Summary for ${today}`, 14, currentY);
+    currentY += 10;
+
+    // Attendance table data
+    const attendanceData = [];
+    Object.entries(attendanceSummary).forEach(([manager, data]) => {
+      attendanceData.push([
+        manager,
+        data.total_resources.toString(),
+        data.present.toString(),
+        data.absent.toString(),
+        `${((data.present / data.total_resources) * 100).toFixed(1)}%`
+      ]);
+    });
+
+    if (attendanceData.length > 0) {
+      autoTable(doc, {
+        head: [['Manager', 'Total Resources', 'Present', 'Absent', 'Attendance %']],
+        body: attendanceData,
+        startY: currentY,
+        styles: {
+          fontSize: 9,
+          cellPadding: 3
+        },
+        headStyles: {
+          fillColor: [59, 130, 246], // Blue color
+          textColor: [255, 255, 255],
+          fontStyle: 'bold'
+        },
+        alternateRowStyles: {
+          fillColor: [248, 250, 252]
+        },
+        margin: { top: 10, bottom: 10 }
+      });
+      
+      currentY = doc.lastAutoTable.finalY + 20;
+    }
+
+    // Work Reports Section
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Detailed Work Reports', 14, currentY);
+    currentY += 10;
     
     // Prepare table data - each task gets its own row
     const tableData = [];
@@ -1417,7 +1509,7 @@ const TeamReport = () => {
     autoTable(doc, {
       head: [['Date', 'Employee', 'Department', 'Team', 'Manager', 'Task Details', 'Status']],
       body: tableData,
-      startY: 50,
+      startY: currentY,
       styles: {
         fontSize: 8,
         cellPadding: 3,
@@ -1470,7 +1562,7 @@ const TeamReport = () => {
     }
     
     // Save the PDF
-    doc.save(`Team_Work_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+    doc.save(`Team_Work_Report_with_Attendance_${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
   const getTeams = () => {
