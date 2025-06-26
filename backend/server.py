@@ -27,8 +27,54 @@ mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ.get('DB_NAME', 'showtime_portal')]
 
-# Create the main app without a prefix
-app = FastAPI(title="Daily Work Reporting Portal API", version="1.0.0")
+# Initialize database with predefined users
+async def init_database():
+    # Check if users already exist
+    user_count = await db.users.count_documents({})
+    if user_count == 0:
+        # Insert predefined users
+        users_to_insert = []
+        for user_data in PREDEFINED_USERS:
+            user = User(
+                name=user_data["name"],
+                email=user_data["email"],
+                password_hash=hash_password(user_data["password"]),
+                role=user_data["role"],
+                department=user_data.get("department", ""),
+                team=user_data.get("team", "")
+            )
+            users_to_insert.append(user.dict())
+        
+        await db.users.insert_many(users_to_insert)
+        print("Database initialized with predefined users")
+    else:
+        # Update existing users with department and team data where missing
+        for user_data in PREDEFINED_USERS:
+            existing_user = await db.users.find_one({"email": user_data["email"]})
+            if existing_user and not existing_user.get("department"):
+                await db.users.update_one(
+                    {"email": user_data["email"]},
+                    {"$set": {
+                        "department": user_data.get("department", ""),
+                        "team": user_data.get("team", "")
+                    }}
+                )
+                print(f"Updated {user_data['name']} with department and team data")
+
+# Lifespan event handler
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    await init_database()
+    yield
+    # Shutdown
+    client.close()
+
+# Create the main app with lifespan
+app = FastAPI(
+    title="Daily Work Reporting Portal API", 
+    version="1.0.0",
+    lifespan=lifespan)
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
